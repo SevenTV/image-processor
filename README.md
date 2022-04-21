@@ -31,7 +31,7 @@ sudo apt-get install ca-certificates \
 You will also need the rust compiler
 
 ```
-$ curl https://sh.rustup.rs -sSf | bash -s -- -y
+curl https://sh.rustup.rs -sSf | bash -s -- -y
 ```
 
 ## 2. You can now start builing all submodules.
