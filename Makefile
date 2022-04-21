@@ -19,3 +19,6 @@ format:
 
 external:
 	cd third-party && $(MAKE)
+
+external_clean:
+	cd third-party && $(MAKE) clean
