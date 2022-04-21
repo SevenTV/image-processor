@@ -1,6 +1,6 @@
 .PHONY: all clean
 
-all: _libavif _libwebp _gifski _opencv
+all: _libavif _libwebp _gifski _opencv _update_linker
 
 _libavif:
 	cd libavif/ext && \
@@ -123,3 +123,6 @@ _opencv:
 
 clean:
 	rm -rf libavif/ext/dav1d libavif/ext/rav1e libavif/build libwebp/build gifski/target opencv/build
+
+_update_linker:
+	(sudo ldconfig || ldconfig) || echo "Couldnt update linker"
