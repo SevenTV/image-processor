@@ -1,7 +1,9 @@
-.PHONY: fast_build build clean format external
+.PHONY: fast_build all build clean format external external_clean test 
 
 fast_build:
 	(stat build && cd build && ninja) || $(MAKE) build
+
+all: build
 
 build: clean
 	mkdir -p build && \
@@ -22,3 +24,6 @@ external:
 
 external_clean:
 	cd third-party && $(MAKE) clean
+
+test:
+	echo "Testing isnt done yet ;)"
