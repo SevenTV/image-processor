@@ -1,0 +1,6 @@
+build/
+out/
+*.gif
+*.webp
+*.avif
+*.png

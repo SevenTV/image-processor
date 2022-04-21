@@ -1,0 +1,12 @@
+build/
+out/
+*.gif
+*.webp
+*.avif
+*.png
+third-party/libavif/ext/dav1d
+third-party/libavif/ext/rav1e
+third-party/libavif/build
+third-party/libwebp/build
+third-party/opencv/build
+Dockerfile

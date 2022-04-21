@@ -1,0 +1,12 @@
+[submodule "third-party/libwebp"]
+	path = third-party/libwebp
+	url = https://github.com/webmproject/libwebp
+[submodule "third-party/libavif"]
+	path = third-party/libavif
+	url = https://github.com/AOMediaCodec/libavif
+[submodule "third-party/gifski"]
+	path = third-party/gifski
+	url = https://github.com/ImageOptim/gifski
+[submodule "third-party/opencv"]
+	path = third-party/opencv
+	url = https://github.com/opencv/opencv.git
