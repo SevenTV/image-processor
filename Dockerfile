@@ -1,4 +1,4 @@
-FROM ubuntu:21.04 as builder
+FROM ubuntu:21.04 as builder-cpp
 
 WORKDIR /tmp/app
 
@@ -19,7 +19,7 @@ RUN apt-get update && \
         zlib1g-dev && \
     curl https://sh.rustup.rs -sSf | bash -s -- -y
 
-COPY . .
+COPY cpp .
 
 RUN PATH="/root/.cargo/bin:${PATH}" make external && \
     ldconfig
