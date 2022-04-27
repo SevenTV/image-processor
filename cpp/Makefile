@@ -1,4 +1,4 @@
-.PHONY: fast_build all build clean format external external_clean test 
+.PHONY: fast_build all build clean format external external_clean test lint
 
 fast_build:
 	(stat build && cd build && ninja) || $(MAKE) build
@@ -14,6 +14,10 @@ build: clean
 
 clean:
 	rm -rf build out bin
+
+lint:
+	find . -regex '.*\.\(cpp\|hpp\|cc\|cxx\|c\|h\)' -not -path "./build/*" -not -path "./third-party/*" -exec clang-format -style=file --Werror --dry-run {} \;
+	find . -regex '.*\(CMakeLists.txt\|\.cmake\)' -not -path "./build/*" -not -path "./third-party/*" -exec cmake-format --check {} \;
 
 format:
 	find . -regex '.*\.\(cpp\|hpp\|cc\|cxx\|c\|h\)' -not -path "./build/*" -not -path "./third-party/*" -exec clang-format -style=file -i {} \;

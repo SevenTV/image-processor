@@ -23,11 +23,13 @@ lint:
 	go vet ./...
 	golangci-lint run
 
+format:
+	gofmt -s -w .
+
 deps:
-	yarn
-	CGO_ENABLED=0 go mod download
-	CGO_ENABLED=0 go install honnef.co/go/tools/cmd/staticcheck@latest
-	CGO_ENABLED=0 go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	go mod download
+	go install honnef.co/go/tools/cmd/staticcheck@latest
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
 test:
 	go test -count=1 -cover ./...
