@@ -14,8 +14,6 @@ jobs:
     steps:
       - name: Checkout the code
         uses: actions/checkout@v3
-        with:
-          submodules: true
 
       - name: Log into Harbor Registry
         uses: docker/login-action@v1
@@ -34,14 +32,6 @@ jobs:
           install: true
           endpoint: builders
 
-      - name: Cache Docker layers
-        uses: actions/cache@v3
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
-
       - name: Build Image
         id: build_step
         uses: docker/build-push-action@v2
@@ -50,13 +40,8 @@ jobs:
             "BUILDER=${{ github.actor }}"
             "VERSION=${{ github.sha }}"
           push: true
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache-new
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           tags: |
             harbor.disembark.dev/7tv/image-processor-dev:${{ github.sha }}
             harbor.disembark.dev/7tv/image-processor-dev:latest
-
-      - name: Move cache
-        run: |
-          rm -rf /tmp/.buildx-cache
-          mv /tmp/.buildx-cache-new /tmp/.buildx-cache

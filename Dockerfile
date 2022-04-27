@@ -28,7 +28,7 @@ RUN apt-get update && \
 
 COPY cpp/third-party third-party
 
-RUN cd third-party && make clean && make
+RUN cd third-party && make clean && rm -rf **/.git && make
 
 COPY cpp .
 
