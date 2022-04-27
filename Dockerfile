@@ -54,12 +54,11 @@ RUN apt-get update && \
     apt-get clean -y && \
     rm -rf /var/cache/apt/archives /var/lib/apt/lists/*
 
-FROM ubuntu:22.04
+FROM ubuntu:22.04 as ffmpeg
 
 WORKDIR /app
 
 COPY --from=builder-cpp /usr/local /usr/local
-COPY --from=builder-go /tmp/images/bin/images_processor .
 
 RUN apt-get update && \
     apt-get install -y \
@@ -72,3 +71,7 @@ RUN apt-get update && \
     apt-get autoremove -y && \
     apt-get clean -y && \
     rm -rf /var/cache/apt/archives /var/lib/apt/lists/*
+
+FROM ffmpeg
+
+COPY --from=builder-go /tmp/images/bin/images_processor .
