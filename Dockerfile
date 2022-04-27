@@ -80,7 +80,7 @@ FROM ubuntu:22.04
 WORKDIR /app
 
 COPY --from=builder-cpp /usr/local /usr/local
-COPY --from=builder-go /tmp/images/bin/images .
+COPY --from=builder-go /tmp/images/bin/images_processor .
 
 RUN apt-get update && \
     apt-get install -y \
