@@ -26,12 +26,11 @@ RUN apt-get update && \
         libssl-dev && \
     curl https://sh.rustup.rs -sSf | bash -s -- -y
 
-COPY cpp cpp
-COPY .git .git
+COPY cpp .
 
-RUN cd cpp && make external_clean && make external
+RUN make external_clean && make external
 
-RUN make -C cpp
+RUN make
 
 RUN apt-get remove -y \
         build-essential \
@@ -50,7 +49,7 @@ RUN apt-get remove -y \
     apt-get install -y libpng16-16 && \
     apt-get clean -y && \
     rustup self uninstall -y && \
-    cp /tmp/app/cpp/out/* /usr/local/bin && \
+    cp /tmp/app/out/* /usr/local/bin && \
     rm -rf /tmp/app && \
     rm -rf /var/cache/apt/archives /var/lib/apt/lists/*
 

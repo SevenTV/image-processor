@@ -16,7 +16,7 @@ else
 endif
 
 build:
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -ldflags "-X 'main.Version=${VERSION}' -X 'main.Unix=$(shell date +%s)' -X 'main.User=${BUILDER}'" -o bin/images .
+	GOOS=linux GOARCH=amd64 go build -v -ldflags "-X 'main.Version=${VERSION}' -X 'main.Unix=$(shell date +%s)' -X 'main.User=${BUILDER}'" -o bin/images_processor .
 
 lint:
 	staticcheck ./...
@@ -33,3 +33,6 @@ deps:
 
 test:
 	go test -count=1 -cover ./...
+
+clean:
+	rm -rf bin

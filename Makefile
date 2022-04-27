@@ -16,3 +16,7 @@ format:
 test:
 	$(MAKE) -C cpp test
 	$(MAKE) -C go test
+
+clean:
+	$(MAKE) -C cpp clean
+	$(MAKE) -C go clean

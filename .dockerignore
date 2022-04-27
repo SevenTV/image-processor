@@ -16,6 +16,7 @@ node_modules/
 build/
 out/
 
+**/.git
 cpp/build
 cpp/out
 cpp/third-party/dav1d/build 

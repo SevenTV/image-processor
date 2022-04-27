@@ -1,7 +1,9 @@
 package main
 
-import "go.uber.org/zap"
+import (
+	"go.uber.org/zap"
+)
 
 func main() {
-	zap.S().Info("PAJAW")
+	zap.S().Info("??")
 }
