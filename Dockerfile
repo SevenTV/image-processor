@@ -50,8 +50,11 @@ RUN apt-get update && \
     apt-get install -y \
         build-essential \
         make \
-        git && \
-    make build
+        git
+
+RUN make deps
+
+RUN make
 
 FROM ubuntu:22.04 as ffmpeg
 

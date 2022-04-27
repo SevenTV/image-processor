@@ -27,5 +27,8 @@ external:
 external_clean:
 	$(MAKE) -C third-party clean
 
+dev_deps:
+	pip3 install -r requirements.txt
+
 test:
 	echo "Testing isnt done yet ;)"

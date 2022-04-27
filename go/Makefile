@@ -1,4 +1,4 @@
-.PHONY: build lint deps
+.PHONY: build lint deps dev_deps
 
 BUILDER := "unknown"
 VERSION := "unknown"
@@ -28,8 +28,10 @@ format:
 
 deps:
 	go mod download
-	go install honnef.co/go/tools/cmd/staticcheck@latest
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+
+dev_deps:
+	go install honnef.co/go/tools/cmd/staticcheck@v0.3.1
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@master # TODO fix this version, currently master to lint go1.18 files
 
 test:
 	go test -count=1 -cover ./...

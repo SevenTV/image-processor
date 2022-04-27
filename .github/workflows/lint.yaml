@@ -19,31 +19,47 @@ jobs:
           go-version: ${{ matrix.go }}
         id: go
 
-      - uses: actions/setup-node@v2
+      - name: Set up Node
+        uses: actions/setup-node@v2
         with:
-          node-version: "14"
+          node-version: "18"
 
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v2.4.0
+      - name: Set up Python
+        uses: actions/setup-python@v3
         with:
-          submodules: recursive
+          python-version: "3.10.4"
 
       - id: go-cache-paths
         run: |
           echo "::set-output name=go-build::$(go env GOCACHE)"
           echo "::set-output name=go-mod::$(go env GOMODCACHE)"
 
-      - name: Go Build Cache
-        uses: actions/cache@v2
+      - name: Cache go build
+        uses: actions/cache@v3
         with:
           path: ${{ steps.go-cache-paths.outputs.go-build }}
-          key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
+          key: ${{ runner.os }}-go-build-cache-${{ hashFiles('**/go.sum') }}
 
-      - name: Go Mod Cache
-        uses: actions/cache@v2
+      - name: Cache go modules
+        uses: actions/cache@v3
         with:
           path: ${{ steps.go-cache-paths.outputs.go-mod }}
-          key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
+          key: ${{ runner.os }}-go-modules-cache-${{ hashFiles('**/go.sum') }}
+
+      - name: Cache node modules
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-modules-cache-${{ hashFiles('**/yarn.lock') }}
+
+      - name: Cache python modules
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-python-modules-cache-${{ hashFiles('**/requirements.txt') }}
+
+      - name: Install Deps
+        run: make dev_deps
 
       - name: lint
         run: make lint
