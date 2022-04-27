@@ -1,11 +1,9 @@
-.PHONY: fast_build all build clean format external external_clean test lint
+.PHONY: build clean format external external_clean test lint
 
-fast_build:
-	(stat build && cd build && ninja) || $(MAKE) build
+build:
+	(stat build && cd build && ninja) || $(MAKE) _build
 
-all: build
-
-build: clean
+_build: clean
 	mkdir -p build && \
 	cd build && \
 	cmake -G Ninja \

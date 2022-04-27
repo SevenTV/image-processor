@@ -26,9 +26,11 @@ RUN apt-get update && \
         libssl-dev && \
     curl https://sh.rustup.rs -sSf | bash -s -- -y
 
-COPY cpp .
+COPY cpp/third-party third-party
 
-RUN make external_clean && make external
+RUN cd third-party && make clean && make
+
+COPY cpp .
 
 RUN make
 
@@ -46,13 +48,10 @@ ENV IMAGES_VERSION=${VERSION}
 
 RUN apt-get update && \
     apt-get install -y \
+        build-essential \
         make \
         git && \
-    apt-get clean && \
-    make build && \
-    apt-get autoremove -y && \
-    apt-get clean -y && \
-    rm -rf /var/cache/apt/archives /var/lib/apt/lists/*
+    make build
 
 FROM ubuntu:22.04 as ffmpeg
 

@@ -1,7 +1,8 @@
 .PHONY: build clean format lint
 
 build:
-	$(MAKE) -C cpp fast_build
+	$(MAKE) -C cpp build
+	$(MAKE) -C go build
 
 lint:
 	yarn prettier --check .
