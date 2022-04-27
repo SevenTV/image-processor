@@ -1,4 +1,4 @@
-module github.com/seventv/imageprocessor/go
+module github.com/seventv/image-processor/go
 
 go 1.18
 
