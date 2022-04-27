@@ -15,8 +15,8 @@ RUN apt-get update && \
         nasm \
         openssl \
         pkg-config \
-        libssl-dev \
         cmake \
+        libssl-dev \
         libpng-dev \
         zlib1g-dev \
         libx264-dev \
@@ -31,27 +31,6 @@ COPY cpp .
 RUN make external_clean && make external
 
 RUN make
-
-RUN apt-get remove -y \
-        build-essential \
-        curl \
-        ninja-build \
-        meson \
-        git \
-        nasm \
-        openssl \
-        pkg-config \
-        libssl-dev \
-        cmake \
-        libpng-dev \
-        zlib1g-dev && \
-    apt-get autoremove -y && \
-    apt-get install -y libpng16-16 && \
-    apt-get clean -y && \
-    rustup self uninstall -y && \
-    cp /tmp/app/out/* /usr/local/bin && \
-    rm -rf /tmp/app && \
-    rm -rf /var/cache/apt/archives /var/lib/apt/lists/*
 
 FROM golang:1.18.1 as builder-go
 
