@@ -1,0 +1,9 @@
+cpp/build
+cpp/out
+cpp/third-party/dav1d 
+cpp/third-party/libavif 
+cpp/third-party/libwebp 
+cpp/third-party/gifski 
+cpp/third-party/opencv 
+cpp/third-party/rav1e
+cpp/third-party/FFmpeg

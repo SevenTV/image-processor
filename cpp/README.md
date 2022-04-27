@@ -1,6 +1,4 @@
-# ImageProcessor C++
-
-7TV Image Processor in C++
+# C++
 
 ## 1. To build this repo, you must first install all required dependancies
 
