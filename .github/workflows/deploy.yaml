@@ -12,7 +12,10 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout the code
+        uses: actions/checkout@v3
+        with:
+        submodules: true
 
       - name: Log into Harbor Registry
         uses: docker/login-action@v1
@@ -32,7 +35,7 @@ jobs:
           endpoint: builders
 
       - name: Cache Docker layers
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ github.sha }}
