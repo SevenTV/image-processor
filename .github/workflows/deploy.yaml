@@ -15,7 +15,7 @@ jobs:
       - name: Checkout the code
         uses: actions/checkout@v3
         with:
-        submodules: true
+          submodules: true
 
       - name: Log into Harbor Registry
         uses: docker/login-action@v1
