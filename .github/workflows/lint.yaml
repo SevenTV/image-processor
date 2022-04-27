@@ -69,7 +69,7 @@ jobs:
       - name: Checkout the code
         uses: actions/checkout@v3
         with:
-        submodules: true
+          submodules: true
 
       - name: Install Deps
         run: make dev_deps
