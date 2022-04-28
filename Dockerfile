@@ -103,4 +103,4 @@ RUN apt-get update && \
 
 # copy compiled libs/binaries from the builders.
 COPY --from=builder-cpp /usr/local /usr/local
-COPY --from=builder-go /tmp/images/bin/images_processor .
+COPY --from=builder-go /tmp/images/out/images_processor .
