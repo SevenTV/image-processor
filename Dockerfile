@@ -50,7 +50,6 @@ COPY cpp .
 # build our c++ apps
 RUN make
 
-
 #
 # builder for all golang applications.
 #
@@ -81,7 +80,6 @@ RUN make deps
 
 # build the golang app
 RUN make
-
 
 #
 # final squashed image
