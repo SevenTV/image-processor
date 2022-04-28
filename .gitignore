@@ -1,7 +1,10 @@
-*.png
-*.gif
-*.webp
-*.avif
+*.avi
+*.jpeg
+*.jpg
+*.webm
+*.mp4
+*.flv
+*.tiff
 bin/
 tmp/
 *.yaml
