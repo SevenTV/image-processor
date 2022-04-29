@@ -40,13 +40,33 @@ jobs:
           name: Setup Environment Variables
           command: |
             echo 'export PATH=$(go env GOPATH)/bin:$HOME/.local/bin:$PATH' >> $BASH_ENV
-      - python/install-packages:
-          pkg-manager: pip
-          app-dir: cpp
+      - restore_cache:
+          keys:
+            - python-cache-{{ arch }}-{{ checksum "cpp/requirements.txt"  }}
+            - python-cache-{{ arch }}
+      - restore_cache:
+          keys:
+            - go-mod-cache-{{ arch }}-{{ checksum "go/go.sum"  }}
+            - go-mod-cache-{{ arch }}
+      - restore_cache:
+          keys:
+            - go-build-cache-{{ arch }}-{{ checksum "go/go.sum"  }}
+            - go-build-cache-{{ arch }}
       - run:
           name: Install dev_deps
           command: make dev_deps
       - run:
           name: Linter
           command: make lint
-      - go/save-cache
+      - save_cache:
+          key: python-cache-{{ arch }}-{{ checksum "cpp/requirements.txt"  }}
+          paths:
+            - "{{ pip3 cache dir }}"
+      - save_cache:
+          key: go-mod-cache-{{ arch }}-{{ checksum "go/go.sum"  }}
+          paths:
+            - "{{ go env GOMODCACHE }}"
+      - save_cache:
+          key: go-build-cache-{{ arch }}-{{ checksum "go/go.sum"  }}
+          paths:
+            - "{{ go env GOCACHE }}"
