@@ -26,6 +26,8 @@ jobs:
               python3 \
               python3-pip \
               git
+            sudo ln -s $(which pip3) /usr/local/bin/pip
+            sudo ln -s $(which python3) /usr/local/bin/python
       - node/install:
           install-yarn: true
           node-version: "18"
@@ -38,9 +40,13 @@ jobs:
           name: Setup Environment Variables
           command: |
             echo 'export PATH=$(go env GOPATH)/bin:$HOME/.local/bin:$PATH' >> $BASH_ENV
+      - python/install-packages:
+          pkg-manager: pip
+          app-dir: cpp
       - run:
           name: Install dev_deps
           command: make dev_deps
       - run:
           name: Linter
           command: make lint
+      - go/save-cache
