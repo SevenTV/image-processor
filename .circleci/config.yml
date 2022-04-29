@@ -17,15 +17,10 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Setup Environment Variables
-          command: |
-            echo 'export PATH=$GOPATH/bin:$HOME/.local/bin:$PATH' >> $BASH_ENV
-      - run:
           name: Install Deps
           command: |
             sudo apt-get update
             sudo apt-get install make build-essential python3 python3-pip -y
-            export PATH=
       - node/install:
           install-yarn: true
           node-version: "18"
@@ -34,6 +29,10 @@ jobs:
       - node/install-packages:
           check-cache: always
           pkg-manager: yarn
+      - run:
+          name: Setup Environment Variables
+          command: |
+            echo 'export PATH=$GOPATH/bin:$HOME/.local/bin:$PATH' >> $BASH_ENV
       - run:
           name: Install dev_deps
           command: make dev_deps
