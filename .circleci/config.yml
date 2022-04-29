@@ -59,12 +59,12 @@ jobs:
       - save_cache:
           key: python-cache-{{ arch }}-{{ checksum "cpp/requirements.txt"  }}
           paths:
-            - "{{ pip3 cache dir }}"
+            - /home/circle/.cache/pip
       - save_cache:
           key: go-mod-cache-{{ arch }}-{{ checksum "go/go.sum"  }}
           paths:
-            - "{{ go env GOMODCACHE }}"
+            - /home/circleci/go/pkg/mod
       - save_cache:
           key: go-build-cache-{{ arch }}-{{ checksum "go/go.sum"  }}
           paths:
-            - "{{ go env GOCACHE }}"
+            - /home/circle/.cache/go-build
