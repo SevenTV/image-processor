@@ -7,6 +7,7 @@ workflows:
 orbs:
   node: circleci/node@5.0.2
   go: circleci/go@1.7.1
+  python: circleci/python@2.0.3
 
 jobs:
   lint:
@@ -24,5 +25,17 @@ jobs:
           install-yarn: true 
           node-version: '18'
       - go/install:
-          version: '1.18.1' 
-    parallelism: 4
+          version: '1.18.1'
+      - node/install-packages:
+          check-cache: always 
+          pkg-manager: yarn 
+      - python/install-packages:
+          pkg-manager: auto 
+          pip-dependency-file: requirements.txt 
+          app-dir: cpp
+      - run:
+          name: Install go dev_deps
+          command: make -C go dev_deps 
+      - run:
+          name: Linter
+          command: make lint
