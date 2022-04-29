@@ -19,7 +19,7 @@ jobs:
           name: Install make
           command: |
             sudo apt-get update
-            sudo apt-get install make build-essential
+            sudo apt-get install make build-essential -y
       - node/install:
           install-yarn: true 
           node-version: '18'
