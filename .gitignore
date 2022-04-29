@@ -8,6 +8,7 @@
 bin/
 tmp/
 *.yaml
+!.circleci/*.yaml
 !example.config.yaml
 !docker-compose.yaml
 !.github/**/*.yaml
