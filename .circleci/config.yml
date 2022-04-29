@@ -82,6 +82,11 @@ jobs:
             - v1-{{ .Branch }}
             - v1
       - run:
+          name: Install docker
+          command: |
+            sudo apt-get update 
+            sudo apt-get install docker.io
+      - run:
           name: Load Docker image layer cache
           command: |
             set +o pipefail
