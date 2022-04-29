@@ -20,7 +20,12 @@ jobs:
           name: Install Deps
           command: |
             sudo apt-get update
-            sudo apt-get install make build-essential python3 python3-pip -y
+            sudo apt-get install -y \
+              make \
+              build-essential \
+              python3 \
+              python3-pip \
+              git
       - node/install:
           install-yarn: true
           node-version: "18"
