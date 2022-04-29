@@ -2,7 +2,7 @@ version: 2.1
 workflows:
   lint:
     jobs:
-      - lint
+      - lint_go
 
 jobs:
   lint_go:
