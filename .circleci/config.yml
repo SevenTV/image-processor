@@ -25,3 +25,4 @@ jobs:
           node-version: '18'
       - go/install:
           version: '1.18.1' 
+    parallelism: 4
