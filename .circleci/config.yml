@@ -74,10 +74,8 @@ jobs:
             - /home/circle/.cache/go-build
   build:
     resource_class: seventv/self-hosted
-    docker:
-      - image: docker:20.10.14-git
+    machine: true
     steps:
-      - setup_remote_docker
       - checkout
       - restore_cache:
           keys:
