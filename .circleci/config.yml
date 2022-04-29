@@ -19,6 +19,7 @@ jobs:
       - run:
           name: Install Deps
           command: |
+            echo 'export NVM_DIR="$HOME/.nvm"' >> "$BASH_ENV";
             sudo apt-get update
             sudo apt-get install -y \
               make \
