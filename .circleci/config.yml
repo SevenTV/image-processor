@@ -5,14 +5,10 @@ workflows:
       - lint_go
 
 jobs:
-  lint_go:
+  lint:
     machine: true
     resource_class: seventv/self-hosted
-    docker:
-      - image: circleci/golang:1.18.1
     steps:
       - checkout
       - name: Install make
         run: apt-get update && apt-get install make
-      - name: Run Lint
-        run: make -C go lint
