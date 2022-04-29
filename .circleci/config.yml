@@ -85,7 +85,7 @@ jobs:
           name: Install docker
           command: |
             sudo apt-get update 
-            sudo apt-get install docker.io
+            sudo apt-get install -y docker.io
       - run:
           name: Load Docker image layer cache
           command: |
