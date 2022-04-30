@@ -104,7 +104,10 @@ jobs:
       - checkout
       - run:
           name: Fetch Submodules
-          command: git submodule update --init --recursive
+          command: |
+            ssh-keyscan github.com >> ~/.ssh/known_hosts
+            git submodule update --init --recursive
+            rm ~/.ssh/known_hosts
       - restore_cache:
           keys:
             - "v1-deps-builder-{{ .Branch }}"
