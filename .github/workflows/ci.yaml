@@ -107,7 +107,7 @@ jobs:
     runs-on: self-hosted
     needs:
       - changes
-    if: ${{ needs.changes.outputs.third-party == 'true' }}
+    if: ${{ needs.changes.outputs.third-party == 'true' && always() }}
     concurrency:
       group: ${{ github.workflow }}-deps-builder-${{ github.ref }}
       cancel-in-progress: true
@@ -157,7 +157,7 @@ jobs:
     needs:
       - changes
       - deps-builder
-    if: ${{ needs.changes.outputs.third-party == 'true' }}
+    if: ${{ needs.changes.outputs.third-party == 'true' && always() }}
     concurrency:
       group: ${{ github.workflow }}-deps-${{ github.ref }}
       cancel-in-progress: true
@@ -217,7 +217,7 @@ jobs:
     needs:
       - changes
       - deps
-    if: ${{ needs.changes.outputs.cpp == 'true' }}
+    if: ${{ needs.changes.outputs.cpp == 'true' && always() }}
     concurrency:
       group: ${{ github.workflow }}-cpp-builder-${{ github.ref }}
       cancel-in-progress: true
@@ -276,7 +276,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - changes
-    if: ${{ needs.changes.outputs.go-deps == 'true' }}
+    if: ${{ needs.changes.outputs.go-deps == 'true' && always() }}
     concurrency:
       group: ${{ github.workflow }}-go-deps-${{ github.ref }}
       cancel-in-progress: true
@@ -327,7 +327,7 @@ jobs:
     needs:
       - changes
       - go-deps
-    if: ${{ needs.changes.outputs.go == 'true' }}
+    if: ${{ needs.changes.outputs.go == 'true' && always() }}
     concurrency:
       group: ${{ github.workflow }}-go-builder-${{ github.ref }}
       cancel-in-progress: true
@@ -388,7 +388,7 @@ jobs:
       - changes
       - cpp-builder
       - go-deps
-    if: ${{ needs.changes.outputs.tests == 'true' }}
+    if: ${{ needs.changes.outputs.tests == 'true' && always() }}
     concurrency:
       group: ${{ github.workflow }}-tests-${{ github.ref }}
       cancel-in-progress: true
@@ -464,7 +464,7 @@ jobs:
       group: ${{ github.workflow }}-final-${{ github.ref }}
       cancel-in-progress: true
 
-    if: ${{ needs.changes.outputs.final == 'true' }}
+    if: ${{ needs.changes.outputs.final == 'true' && always() }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
