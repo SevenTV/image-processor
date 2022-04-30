@@ -30,4 +30,6 @@ func TestHealth(t *testing.T) {
 	cancel()
 
 	<-done
+
+	time.Sleep(time.Second)
 }
