@@ -42,6 +42,9 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Fetch Submodules
+          command: git submodule update --init --recursive
+      - run:
           name: Install Deps
           command: |
             echo 'export NVM_DIR="$HOME/.nvm"' >> "$BASH_ENV";
