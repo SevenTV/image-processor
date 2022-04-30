@@ -4,103 +4,186 @@ ARG BASE_IMG=ubuntu:22.04
 ARG GOLANG_TAG=1.18.1
 
 #
-# builder for all C/C++ libs and applications
+# Download and install all deps required to build/run the application
 #
-FROM $BASE_IMG as builder-cpp
+FROM $BASE_IMG as deps-builder
+    WORKDIR /tmp/build
 
-WORKDIR /tmp/app
+    ENV PATH="/root/.cargo/bin:${PATH}"
 
-ENV PATH="/root/.cargo/bin:${PATH}"
+    COPY cpp/third-party third-party
 
-# Install all libs with dev files, including rust.
-RUN apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y \
-        ca-certificates \
-        build-essential \
-        curl \
-        ninja-build \
-        meson \
-        git \
-        nasm \
-        openssl \
-        pkg-config \
-        cmake \
-        libssl-dev \
-        libpng-dev \
-        zlib1g-dev \
-        libx264-dev \
-        libx265-dev \
-        libvpx-dev \
-        libopenjp2-7-dev \
-        libssl-dev && \
-    curl https://sh.rustup.rs -sSf | bash -s -- -y && \
-    apt-get autoremove -y && \
-    apt-get clean -y && \
-    rm -rf /var/cache/apt/archives /var/lib/apt/lists/*
-
-# copy third party deps
-COPY cpp/third-party third-party
-
-# build 3rd party deps, we remove any .git folders because we dont want the 3rd party deps to know they are apart of a git repo.
-RUN cd third-party && make clean && rm -rf **/.git && make
-
-# copy c++ code now
-COPY cpp .
-
-# build our c++ apps
-RUN make
+    # Install all libs with dev files, including rust.
+    RUN apt-get update && \
+        DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            ca-certificates \
+            build-essential \
+            curl \
+            ninja-build \
+            meson \
+            git \
+            nasm \
+            openssl \
+            pkg-config \
+            cmake \
+            libssl-dev \
+            libpng-dev \
+            zlib1g-dev \
+            libx264-dev \
+            libx265-dev \
+            libvpx-dev \
+            libopenjp2-7-dev \
+            libssl-dev && \
+        curl https://sh.rustup.rs -sSf | bash -s -- -y && \
+        cd third-party && \
+        make clean && \
+        rm -rf **/.git && \
+        make && \
+        apt-get remove -y ca-certificates \
+            build-essential \
+            curl \
+            ninja-build \
+            meson \
+            git \
+            nasm \
+            openssl \
+            pkg-config \
+            cmake \
+            libssl-dev \
+            libpng-dev \
+            zlib1g-dev \
+            libx264-dev \
+            libx265-dev \
+            libvpx-dev \
+            libopenjp2-7-dev \
+            libssl-dev && \
+        rustup self uninstall -y && \
+        apt-get autoremove -y && \
+        apt-get clean -y && \
+        rm -rf /var/cache/apt/archives /var/lib/apt/lists/* && \
+        cd / && \
+        rm -rf /tmp/build
 
 #
-# builder for all golang applications.
+# Squash the deps-builder image into a single layer
 #
-FROM golang:$GOLANG_TAG as builder-go
+FROM $BASE_IMG as deps
+    WORKDIR /tmp/build
 
-WORKDIR /tmp/images
+    # install all the final libs for ffmpeg.
+    RUN apt-get update && \
+        apt-get install -y \
+            libpng16-16 \
+            libvpx7 \
+            libx264-163 \
+            libx265-199 \
+            libopenjp2-7 \
+            openssl && \
+        apt-get autoremove -y && \
+        apt-get clean -y && \
+        rm -rf /var/cache/apt/archives /var/lib/apt/lists/*
 
-# update the apt repo and install any deps we might need.
-RUN apt-get update && \
-    apt-get install -y \
-        build-essential \
-        make \
-        git && \
-    apt-get autoremove -y && \
-    apt-get clean -y && \
-    rm -rf /var/cache/apt/archives /var/lib/apt/lists/*
+    # copy compiled libs/binaries from the builders.
+    COPY --from=deps-builder /usr/local /usr/local
 
-COPY go .
+    # Required since we are moving libs.
+    RUN ldconfig
 
-ARG BUILDER
-ARG VERSION
+#
+# CPP Source Code
+#
+FROM $BASE_IMG as cpp-src
+    WORKDIR /tmp/src
 
-ENV IMAGES_BUILDER=${BUILDER}
-ENV IMAGES_VERSION=${VERSION}
+    COPY cpp .
 
-# download all the golang modules, we do this step here so we can cache the build layers.
-RUN make deps
+    RUN rm -rf third-party
 
-# build the golang app
-RUN make
+#
+# Build the cpp application
+#
+FROM deps as cpp-builder
+    WORKDIR /tmp/build
+
+    COPY --from=cpp-src /tmp/src .
+
+    RUN apt-get update && \
+        apt-get install -y \
+            build-essential \
+            cmake \
+            make \
+            ninja-build && \
+        make && \
+        apt-get remove -y \
+            build-essential \
+            cmake \
+            make \
+            ninja-build && \
+        apt-get autoremove -y && \
+        apt-get clean -y && \
+        rm -rf /var/cache/apt/archives /var/lib/apt/lists/* && \
+        mv out /tmp && \
+        cd /tmp && \
+        rm -rf /tmp/build && \
+        mkdir /tmp/build && \
+        mv out /tmp/build
+
+#
+# Download and install all deps required to run tests and build the go application
+#
+FROM golang:$GOLANG_TAG as go-deps
+    WORKDIR /tmp/build
+
+    COPY go/go.mod .
+    COPY go/go.sum .
+    COPY go/Makefile .
+
+    # update the apt repo and install any deps we might need.
+    RUN apt-get update && \
+        apt-get install -y \
+            make \
+            git && \
+        make deps && \
+        apt-get autoremove -y && \
+        apt-get clean -y && \
+        rm -rf /var/cache/apt/archives /var/lib/apt/lists/*
+
+#
+# Build the go application
+#
+FROM go-deps as go-builder
+    WORKDIR /tmp/build
+
+    ARG BUILDER
+    ARG VERSION
+
+    ENV IMAGES_BUILDER=${BUILDER}
+    ENV IMAGES_VERSION=${VERSION}
+
+    COPY go .
+
+    RUN make
+
+#
+# Run the go tests
+#
+FROM go-deps as tests
+    WORKDIR /tmp/build
+    
+    COPY assets /tmp/assets
+    COPY --from=cpp-builder /tmp/build/out /usr/local/bin
+
+    COPY go .
+
+    RUN make test
+
+    CMD ["make", "test"]
 
 #
 # final squashed image
 #
-FROM $BASE_IMG
+FROM deps as final
+    WORKDIR /app
 
-WORKDIR /app
-
-# install all the final libs for ffmpeg.
-RUN apt-get update && \
-    apt-get install -y \
-        libpng16-16 \
-        libvpx7 \
-        libx264-163 \
-        libx265-199 \
-        libopenjp2-7 \
-        openssl && \
-    apt-get autoremove -y && \
-    apt-get clean -y && \
-    rm -rf /var/cache/apt/archives /var/lib/apt/lists/*
-
-# copy compiled libs/binaries from the builders.
-COPY --from=builder-cpp /usr/local /usr/local
-COPY --from=builder-go /tmp/images/out/images_processor .
+    COPY --from=cpp-builder /tmp/build/out /usr/local/bin
+    COPY --from=go-builder /tmp/build/out .

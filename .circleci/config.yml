@@ -5,12 +5,34 @@ workflows:
       - lint
   build:
     jobs:
-      - build
+      - deps-builder:
+          pre-steps:
+            - docker/setup
+          post-steps:
+            - docker/cleanup
 
 orbs:
   node: circleci/node@5.0.2
   go: circleci/go@1.7.1
   python: circleci/python@2.0.3
+  docker:
+    commands:
+      setup:
+        steps:
+          - run:
+              name: Setup docker
+              command: |
+                docker context create builder
+                docker buildx create --name=builder --use builder
+      cleanup:
+        steps:
+          - run:
+              name: Cleanup docker
+              command: |
+                docker buildx rm builder
+                docker context rm builder
+                docker ps -q | grep . && docker kill $(docker ps -q) || true
+                docker system prune --force --all
 
 jobs:
   lint:
@@ -44,16 +66,16 @@ jobs:
             echo 'export PATH=$(go env GOPATH)/bin:$HOME/.local/bin:$PATH' >> $BASH_ENV
       - restore_cache:
           keys:
-            - python-cache-{{ arch }}-{{ checksum "cpp/requirements.txt"  }}
-            - python-cache-{{ arch }}
+            - "python-cache-{{ arch }}-{{ checksum cpp/requirements.txt  }}"
+            - "python-cache-{{ arch }}"
       - restore_cache:
           keys:
-            - go-mod-cache-{{ arch }}-{{ checksum "go/go.sum"  }}
-            - go-mod-cache-{{ arch }}
+            - "go-mod-cache-{{ arch }}-{{ checksum go/go.sum  }}"
+            - "go-mod-cache-{{ arch }}"
       - restore_cache:
           keys:
-            - go-build-cache-{{ arch }}-{{ checksum "go/go.sum"  }}
-            - go-build-cache-{{ arch }}
+            - "go-build-cache-{{ arch }}-{{ checksum go/go.sum  }}"
+            - "go-build-cache-{{ arch }}"
       - run:
           name: Install dev_deps
           command: make dev_deps
@@ -61,46 +83,35 @@ jobs:
           name: Linter
           command: make lint
       - save_cache:
-          key: python-cache-{{ arch }}-{{ checksum "cpp/requirements.txt"  }}
+          key: "python-cache-{{ arch }}-{{ checksum cpp/requirements.txt  }}"
           paths:
             - /home/circle/.cache/pip
       - save_cache:
-          key: go-mod-cache-{{ arch }}-{{ checksum "go/go.sum"  }}
+          key: "go-mod-cache-{{ arch }}-{{ checksum go/go.sum  }}"
           paths:
             - /home/circleci/go/pkg/mod
       - save_cache:
-          key: go-build-cache-{{ arch }}-{{ checksum "go/go.sum"  }}
+          key: "go-build-cache-{{ arch }}-{{ checksum go/go.sum  }}"
           paths:
             - /home/circle/.cache/go-build
-  build:
+  deps-builder:
     resource_class: seventv/self-hosted
     machine: true
     steps:
       - checkout
       - restore_cache:
           keys:
-            - v1-{{ .Branch }}
-            - v1
-      - run:
-          name: Install docker
-          command: |
-            sudo apt-get update 
-            sudo apt-get install -y docker.io
-      - run:
-          name: Load Docker image layer cache
-          command: |
-            set +o pipefail
-            docker load -i /caches/app.tar | true
+            - "v1-deps-builder-{{ .Branch }}"
+            - v1-deps-builder
       - run:
           name: Build application Docker image
           command: |
-            DOCKER_BUILDKIT=1 docker build --cache-from=app -t app .
-      - run:
-          name: Save Docker image layer cache
-          command: |
-            mkdir -p /caches
-            docker save -o /caches/app.tar app
+            docker buildx build \
+              --target deps-builder \
+              --cache-from=type=local,src=.cache/deps-builder \
+              --cache-to=type=local,dest=.cache/deps-builder \
+              .
       - save_cache:
-          key: v1-{{ .Branch }}-{{ epoch }}
+          key: "v1-deps-builder-{{ .Branch }}-{{ epoch }}"
           paths:
-            - /caches/app.tar
+            - .cache/deps-builder

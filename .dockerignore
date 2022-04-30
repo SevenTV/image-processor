@@ -11,8 +11,35 @@ packrd/
 **/node_modules/
 build/
 out/
+*.a
+*.o
+*.o.*
+*.d
+*.def
+*.dll
+*.dylib
+*.exe
+*.exp
+*.gcda
+*.gcno
+*.h.c
+*.ilk
+*.lib
+*.pc
+*.pdb
+*.so
+*.so.*
+*.swp
+*.ver
+*.version
+*.metal.air
+*.metallib
+*.metallib.c
+*.ptx
+*.ptx.c
+*.ptx.gz
+*_g
 
-**/.git
 cpp/build
 cpp/out
 cpp/third-party/dav1d/build 
@@ -21,6 +48,7 @@ cpp/third-party/libwebp/build
 cpp/third-party/gifski/target 
 cpp/third-party/opencv/build 
 cpp/third-party/rav1e/target
-cpp/third-party/FFmpeg/build
+cpp/third-party/FFmpeg/src
+export/
 
 Dockerfile

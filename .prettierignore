@@ -7,3 +7,6 @@ cpp/third-party/gifski
 cpp/third-party/opencv 
 cpp/third-party/rav1e
 cpp/third-party/FFmpeg
+node_modules/
+assets/
+Dockerfile

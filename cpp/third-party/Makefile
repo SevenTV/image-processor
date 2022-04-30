@@ -142,7 +142,8 @@ _opencv:
 
 _ffmpeg:
 	cd FFmpeg && \
-	./configure \
+	stat build || (mkdir build && cd build && \
+	../configure \
 		--extra-libs="-lpthread -lm" \
 		--ld="g++" \
 		--prefix=/usr/local \
@@ -160,7 +161,8 @@ _ffmpeg:
 		--enable-libx265 \
 		--enable-libx264 \
 		--enable-shared \
-		--disable-static && \
+		--disable-static) && \
+	cd build && \
 	make -j$$(nproc) && \
 	(sudo make install || make install)
 
