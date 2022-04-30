@@ -7,30 +7,32 @@ workflows:
     jobs:
       - deps-builder:
           pre-steps:
-            - docker/setup
+            - runner/setup
           post-steps:
-            - docker/cleanup
+            - runner/cleanup
 
 orbs:
   node: circleci/node@5.0.2
   go: circleci/go@1.7.1
   python: circleci/python@2.0.3
-  docker:
+  runner:
     commands:
       setup:
         steps:
           - run:
               when: always
-              name: Setup docker
+              name: Setup the runner
               command: |
+                ssh-keyscan github.com >> ~/.ssh/known_hosts
                 docker context create builder
                 docker buildx create --name=builder --use builder
       cleanup:
         steps:
           - run:
               when: always
-              name: Cleanup docker
+              name: Cleanup the runner
               command: |
+                rm ~/.ssh/known_hosts
                 docker buildx rm builder
                 docker context rm builder
                 docker ps -q | grep . && docker kill $(docker ps -q) || true
@@ -105,9 +107,7 @@ jobs:
       - run:
           name: Fetch Submodules
           command: |
-            ssh-keyscan github.com >> ~/.ssh/known_hosts
             git submodule update --init --recursive
-            rm ~/.ssh/known_hosts
       - restore_cache:
           keys:
             - "v1-deps-builder-{{ .Branch }}"
