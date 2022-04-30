@@ -20,6 +20,7 @@ orbs:
       setup:
         steps:
           - run:
+              when: always
               name: Setup docker
               command: |
                 docker context create builder
@@ -27,6 +28,7 @@ orbs:
       cleanup:
         steps:
           - run:
+              when: always
               name: Cleanup docker
               command: |
                 docker buildx rm builder
