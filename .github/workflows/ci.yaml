@@ -10,7 +10,7 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}
+      group: ${{ github.workflow }}-lint-${{ github.ref }}
       cancel-in-progress: true
 
     steps:
@@ -65,11 +65,12 @@ jobs:
 
       - name: Run Lint
         run: make lint
+
   deps-builder:
     name: Deps Builder
     runs-on: self-hosted
     concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}
+      group: ${{ github.workflow }}-deps-builder-${{ github.ref }}
       cancel-in-progress: true
 
     steps:
@@ -89,7 +90,7 @@ jobs:
           endpoint: builders
 
       - name: Cache Docker layers
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: /tmp/.buildx-cache/deps-builder
           key: ${{ runner.os }}-deps-builder-buildx-${{ github.sha }}
@@ -102,10 +103,383 @@ jobs:
           context: .
           push: false
           cache-from: type=local,src=/tmp/.buildx-cache/deps-builder
-          cache-to: type=local,dest=/tmp/.buildx-cache/deps-builder-new,mode=max
+          cache-to: type=local,dest=/tmp/.buildx-cache/deps-builder-new
           target: deps-builder
 
       - name: Move cache
         run: |
           rm -rf /tmp/.buildx-cache/deps-builder
           mv /tmp/.buildx-cache/deps-builder-new /tmp/.buildx-cache/deps-builder
+
+  deps:
+    name: Deps
+    runs-on: self-hosted
+    needs:
+      - deps-builder
+    concurrency:
+      group: ${{ github.workflow }}-deps-${{ github.ref }}
+      cancel-in-progress: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - id: buildx-context
+        run: |
+          docker context create builders
+
+      - uses: docker/setup-buildx-action@v1
+        id: buildx
+        with:
+          install: true
+          endpoint: builders
+
+      - name: Cache Docker layers (deps-builder)
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache/deps-builder
+          key: ${{ runner.os }}-deps-builder-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-deps-builder-buildx-
+
+      - name: Cache Docker layers (deps)
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache/deps
+          key: ${{ runner.os }}-deps-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-deps-buildx-
+
+      - name: Build the cache
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: false
+          cache-from: |
+            type=local,src=/tmp/.buildx-cache/deps
+            type=local,src=/tmp/.buildx-cache/deps-builder
+          cache-to: |
+            type=local,dest=/tmp/.buildx-cache/deps-new
+          target: deps
+
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache/deps
+          mv /tmp/.buildx-cache/deps-new /tmp/.buildx-cache/deps
+
+  cpp-builder:
+    name: Cpp Builder
+    runs-on: self-hosted
+    needs:
+      - deps
+    concurrency:
+      group: ${{ github.workflow }}-cpp-builder-${{ github.ref }}
+      cancel-in-progress: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - id: buildx-context
+        run: |
+          docker context create builders
+
+      - uses: docker/setup-buildx-action@v1
+        id: buildx
+        with:
+          install: true
+          endpoint: builders
+
+      - name: Cache Docker layers (deps-builder)
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache/deps-builder
+          key: ${{ runner.os }}-deps-builder-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-deps-builder-buildx-
+
+      - name: Cache Docker layers (deps)
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache/deps
+          key: ${{ runner.os }}-deps-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-deps-buildx-
+
+      - name: Cache Docker layers (cpp-builder)
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache/deps
+          key: ${{ runner.os }}-cpp-builder-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-cpp-builder-buildx-
+
+      - name: Build the cache
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: false
+          cache-from: |
+            type=local,src=/tmp/.buildx-cache/cpp-builder
+            type=local,src=/tmp/.buildx-cache/deps
+            type=local,src=/tmp/.buildx-cache/deps-builder
+          cache-to: |
+            type=local,dest=/tmp/.buildx-cache/cpp-builder-new
+          target: cpp-builder
+
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache/cpp-builder
+          mv /tmp/.buildx-cache/cpp-builder-new /tmp/.buildx-cache/cpp-builder
+
+  go-deps:
+    name: Go Deps
+    runs-on: self-hosted
+    concurrency:
+      group: ${{ github.workflow }}-go-deps-${{ github.ref }}
+      cancel-in-progress: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - id: buildx-context
+        run: |
+          docker context create builders
+
+      - uses: docker/setup-buildx-action@v1
+        id: buildx
+        with:
+          install: true
+          endpoint: builders
+
+      - name: Cache Docker layers (go-deps)
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache/go-deps
+          key: ${{ runner.os }}-go-deps-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-go-deps-buildx-
+
+      - name: Build the cache
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: false
+          cache-from: |
+            type=local,src=/tmp/.buildx-cache/go-deps
+          cache-to: |
+            type=local,dest=/tmp/.buildx-cache/go-deps-new
+          target: go-deps
+
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache/go-deps
+          mv /tmp/.buildx-cache/go-deps-new /tmp/.buildx-cache/go-deps
+
+  go-builder:
+    name: Go Builder
+    runs-on: self-hosted
+    needs:
+      - go-deps
+    concurrency:
+      group: ${{ github.workflow }}-go-builder-${{ github.ref }}
+      cancel-in-progress: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - id: buildx-context
+        run: |
+          docker context create builders
+
+      - uses: docker/setup-buildx-action@v1
+        id: buildx
+        with:
+          install: true
+          endpoint: builders
+
+      - name: Cache Docker layers (go-deps)
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache/go-deps
+          key: ${{ runner.os }}-go-deps-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-go-deps-buildx-
+
+      - name: Cache Docker layers (go-builder)
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache/go-builder
+          key: ${{ runner.os }}-go-builder-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-go-builder-buildx-
+
+      - name: Build the cache
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: false
+          cache-from: |
+            type=local,src=/tmp/.buildx-cache/go-builder
+            type=local,src=/tmp/.buildx-cache/go-deps
+          cache-to: |
+            type=local,dest=/tmp/.buildx-cache/go-builder-new
+          target: go-builder
+
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache/go-builder
+          mv /tmp/.buildx-cache/go-builder-new /tmp/.buildx-cache/go-builder
+
+  tests:
+    name: Tests
+    runs-on: self-hosted
+    needs:
+      - go-deps
+    concurrency:
+      group: ${{ github.workflow }}-tests-${{ github.ref }}
+      cancel-in-progress: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - id: buildx-context
+        run: |
+          docker context create builders
+
+      - uses: docker/setup-buildx-action@v1
+        id: buildx
+        with:
+          install: true
+          endpoint: builders
+
+      - name: Cache Docker layers (go-deps)
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache/go-deps
+          key: ${{ runner.os }}-go-deps-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-go-deps-buildx-
+
+      - name: Cache Docker layers (tests)
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache/tests
+          key: ${{ runner.os }}-tests-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-tests-buildx-
+
+      - name: Build the cache
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: false
+          cache-from: |
+            type=local,src=/tmp/.buildx-cache/tests
+            type=local,src=/tmp/.buildx-cache/go-deps
+          cache-to: |
+            type=local,dest=/tmp/.buildx-cache/tests-new
+          target: tests
+
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache/tests
+          mv /tmp/.buildx-cache/tests-new /tmp/.buildx-cache/tests
+
+  final:
+    name: Final
+    runs-on: self-hosted
+    needs:
+      - go-builder
+      - cpp-builder
+    concurrency:
+      group: ${{ github.workflow }}-final-${{ github.ref }}
+      cancel-in-progress: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - id: buildx-context
+        run: |
+          docker context create builders
+
+      - uses: docker/setup-buildx-action@v1
+        id: buildx
+        with:
+          install: true
+          endpoint: builders
+
+      - name: Cache Docker layers (deps-builder)
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache/deps-builder
+          key: ${{ runner.os }}-deps-builder-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-deps-builder-buildx-
+
+      - name: Cache Docker layers (deps)
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache/deps
+          key: ${{ runner.os }}-deps-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-deps-buildx-
+
+      - name: Cache Docker layers (cpp-builder)
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache/deps
+          key: ${{ runner.os }}-cpp-builder-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-cpp-builder-buildx-
+
+      - name: Cache Docker layers (go-deps)
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache/go-deps
+          key: ${{ runner.os }}-go-deps-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-go-deps-buildx-
+
+      - name: Cache Docker layers (go-builder)
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache/go-builder
+          key: ${{ runner.os }}-go-builder-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-go-builder-buildx-
+
+      - name: Cache Docker layers (final)
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache/final
+          key: ${{ runner.os }}-final-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-final-buildx-
+
+      - name: Build the cache
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: false
+          cache-from: |
+            type=local,src=/tmp/.buildx-cache/final
+            type=local,src=/tmp/.buildx-cache/go-builder
+            type=local,src=/tmp/.buildx-cache/cpp-builder
+            type=local,src=/tmp/.buildx-cache/go-deps
+            type=local,src=/tmp/.buildx-cache/deps
+            type=local,src=/tmp/.buildx-cache/deps-builder
+          cache-to: |
+            type=local,dest=/tmp/.buildx-cache/final-new
+          target: final
+
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache/final
+          mv /tmp/.buildx-cache/final-new /tmp/.buildx-cache/final
