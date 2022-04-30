@@ -23,7 +23,7 @@ orbs:
               when: always
               name: Setup the runner
               command: |
-                ssh-keyscan github.com >> ~/.ssh/known_hosts
+                sh -c "ssh-keyscan github.com >> ~/.ssh/known_hosts"
                 docker context create builder
                 docker buildx create --name=builder --use builder
       cleanup:
@@ -40,7 +40,6 @@ orbs:
 
 jobs:
   lint:
-    resource_class: seventv/self-hosted
     docker:
       - image: ubuntu:22.04
     steps:
@@ -112,6 +111,10 @@ jobs:
           name: Fetch Submodules
           command: |
             git submodule update --init --recursive
+      - save_cache:
+          key: v1-third-party-{{ .Branch }}-{{ epoch }}
+          paths:
+            - cpp/third-party
       - restore_cache:
           keys:
             - v1-deps-builder-{{ .Branch }}
