@@ -213,7 +213,7 @@ jobs:
       - name: Cache Docker layers (cpp-builder)
         uses: actions/cache@v3
         with:
-          path: /tmp/.buildx-cache/deps
+          path: /tmp/.buildx-cache/cpp-builder
           key: ${{ runner.os }}-cpp-builder-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-cpp-builder-buildx-
