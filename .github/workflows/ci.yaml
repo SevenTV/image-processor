@@ -83,7 +83,7 @@ jobs:
       - uses: dorny/paths-filter@v2
         id: changes
         with:
-          head: ${{ github.ref }}
+          base: ${{ github.ref }}
           filters: |
             third-party:
               - 'cpp/third-party/**'
