@@ -124,6 +124,7 @@ jobs:
       - run:
           name: Fetch Submodules
           command: |
+            sleep 3600
             git submodule sync
             git submodule update --init --recursive
       - save_cache:
