@@ -47,3 +47,4 @@ packrd/
 node_modules/
 build/
 out/
+.cache

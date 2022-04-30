@@ -66,16 +66,16 @@ jobs:
             echo 'export PATH=$(go env GOPATH)/bin:$HOME/.local/bin:$PATH' >> $BASH_ENV
       - restore_cache:
           keys:
-            - "python-cache-{{ arch }}-{{ checksum cpp/requirements.txt  }}"
-            - "python-cache-{{ arch }}"
+            - python-cache-{{ arch }}-{{ checksum "cpp/requirements.txt"  }}
+            - python-cache-{{ arch }}
       - restore_cache:
           keys:
-            - "go-mod-cache-{{ arch }}-{{ checksum go/go.sum  }}"
-            - "go-mod-cache-{{ arch }}"
+            - go-mod-cache-{{ arch }}-{{ checksum "go/go.sum" }}
+            - go-mod-cache-{{ arch }}
       - restore_cache:
           keys:
-            - "go-build-cache-{{ arch }}-{{ checksum go/go.sum  }}"
-            - "go-build-cache-{{ arch }}"
+            - go-build-cache-{{ arch }}-{{ checksum "go/go.sum"  }}
+            - go-build-cache-{{ arch }}
       - run:
           name: Install dev_deps
           command: make dev_deps
@@ -83,15 +83,15 @@ jobs:
           name: Linter
           command: make lint
       - save_cache:
-          key: "python-cache-{{ arch }}-{{ checksum cpp/requirements.txt  }}"
+          key: python-cache-{{ arch }}-{{ checksum "cpp/requirements.txt"  }}
           paths:
             - /home/circle/.cache/pip
       - save_cache:
-          key: "go-mod-cache-{{ arch }}-{{ checksum go/go.sum  }}"
+          key: go-mod-cache-{{ arch }}-{{ checksum "go/go.sum"  }}
           paths:
             - /home/circleci/go/pkg/mod
       - save_cache:
-          key: "go-build-cache-{{ arch }}-{{ checksum go/go.sum  }}"
+          key: go-build-cache-{{ arch }}-{{ checksum "go/go.sum"  }}
           paths:
             - /home/circle/.cache/go-build
   deps-builder:
@@ -110,8 +110,9 @@ jobs:
               --target deps-builder \
               --cache-from=type=local,src=.cache/deps-builder \
               --cache-to=type=local,dest=.cache/deps-builder \
+              --progress plain \
               .
       - save_cache:
-          key: "v1-deps-builder-{{ .Branch }}-{{ epoch }}"
+          key: v1-deps-builder-{{ .Branch }}-{{ epoch }}
           paths:
             - .cache/deps-builder
