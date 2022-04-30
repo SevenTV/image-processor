@@ -92,7 +92,7 @@ jobs:
       - name: Cache Docker layers
         uses: actions/cache@v3
         with:
-          path: /tmp/.buildx-cache/deps-builder
+          path: ./.cache/deps-builder
           key: ${{ runner.os }}-deps-builder-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-deps-builder-buildx-
@@ -103,14 +103,14 @@ jobs:
           context: .
           push: false
           cache-from: |
-            type=local,src=/tmp/.buildx-cache/deps-builder
-          cache-to: type=local,dest=/tmp/.buildx-cache/deps-builder-new,mode=max
+            type=local,src=./.cache/deps-builder
+          cache-to: type=local,dest=./.cache/deps-builder-new,mode=max
           target: deps-builder
 
       - name: Move cache
         run: |
-          rm -rf /tmp/.buildx-cache/deps-builder
-          mv /tmp/.buildx-cache/deps-builder-new /tmp/.buildx-cache/deps-builder
+          rm -rf ./.cache/deps-builder
+          mv ./.cache/deps-builder-new ./.cache/deps-builder
 
   deps:
     name: Deps
@@ -140,7 +140,7 @@ jobs:
       - name: Cache Docker layers (deps-builder)
         uses: actions/cache@v3
         with:
-          path: /tmp/.buildx-cache/deps-builder
+          path: ./.cache/deps-builder
           key: ${{ runner.os }}-deps-builder-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-deps-builder-buildx-
@@ -148,7 +148,7 @@ jobs:
       - name: Cache Docker layers (deps)
         uses: actions/cache@v3
         with:
-          path: /tmp/.buildx-cache/deps
+          path: ./.cache/deps
           key: ${{ runner.os }}-deps-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-deps-buildx-
@@ -159,16 +159,16 @@ jobs:
           context: .
           push: false
           cache-from: |
-            type=local,src=/tmp/.buildx-cache/deps
-            type=local,src=/tmp/.buildx-cache/deps-builder
+            type=local,src=./.cache/deps
+            type=local,src=./.cache/deps-builder
           cache-to: |
-            type=local,dest=/tmp/.buildx-cache/deps-new,mode=max
+            type=local,dest=./.cache/deps-new,mode=max
           target: deps
 
       - name: Move cache
         run: |
-          rm -rf /tmp/.buildx-cache/deps
-          mv /tmp/.buildx-cache/deps-new /tmp/.buildx-cache/deps
+          rm -rf ./.cache/deps
+          mv ./.cache/deps-new ./.cache/deps
 
   cpp-builder:
     name: Cpp Builder
@@ -198,7 +198,7 @@ jobs:
       - name: Cache Docker layers (deps)
         uses: actions/cache@v3
         with:
-          path: /tmp/.buildx-cache/deps
+          path: ./.cache/deps
           key: ${{ runner.os }}-deps-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-deps-buildx-
@@ -206,7 +206,7 @@ jobs:
       - name: Cache Docker layers (cpp-builder)
         uses: actions/cache@v3
         with:
-          path: /tmp/.buildx-cache/cpp-builder
+          path: ./.cache/cpp-builder
           key: ${{ runner.os }}-cpp-builder-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-cpp-builder-buildx-
@@ -217,16 +217,16 @@ jobs:
           context: .
           push: false
           cache-from: |
-            type=local,src=/tmp/.buildx-cache/cpp-builder
-            type=local,src=/tmp/.buildx-cache/deps
+            type=local,src=./.cache/cpp-builder
+            type=local,src=./.cache/deps
           cache-to: |
-            type=local,dest=/tmp/.buildx-cache/cpp-builder-new,mode=max
+            type=local,dest=./.cache/cpp-builder-new,mode=max
           target: cpp-builder
 
       - name: Move cache
         run: |
-          rm -rf /tmp/.buildx-cache/cpp-builder
-          mv /tmp/.buildx-cache/cpp-builder-new /tmp/.buildx-cache/cpp-builder
+          rm -rf ./.cache/cpp-builder
+          mv ./.cache/cpp-builder-new ./.cache/cpp-builder
 
   go-deps:
     name: Go Deps
@@ -254,7 +254,7 @@ jobs:
       - name: Cache Docker layers (go-deps)
         uses: actions/cache@v3
         with:
-          path: /tmp/.buildx-cache/go-deps
+          path: ./.cache/go-deps
           key: ${{ runner.os }}-go-deps-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-go-deps-buildx-
@@ -265,15 +265,15 @@ jobs:
           context: .
           push: false
           cache-from: |
-            type=local,src=/tmp/.buildx-cache/go-deps
+            type=local,src=./.cache/go-deps
           cache-to: |
-            type=local,dest=/tmp/.buildx-cache/go-deps-new,mode=max
+            type=local,dest=./.cache/go-deps-new,mode=max
           target: go-deps
 
       - name: Move cache
         run: |
-          rm -rf /tmp/.buildx-cache/go-deps
-          mv /tmp/.buildx-cache/go-deps-new /tmp/.buildx-cache/go-deps
+          rm -rf ./.cache/go-deps
+          mv ./.cache/go-deps-new ./.cache/go-deps
 
   go-builder:
     name: Go Builder
@@ -303,7 +303,7 @@ jobs:
       - name: Cache Docker layers (go-deps)
         uses: actions/cache@v3
         with:
-          path: /tmp/.buildx-cache/go-deps
+          path: ./.cache/go-deps
           key: ${{ runner.os }}-go-deps-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-go-deps-buildx-
@@ -311,7 +311,7 @@ jobs:
       - name: Cache Docker layers (go-builder)
         uses: actions/cache@v3
         with:
-          path: /tmp/.buildx-cache/go-builder
+          path: ./.cache/go-builder
           key: ${{ runner.os }}-go-builder-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-go-builder-buildx-
@@ -322,16 +322,16 @@ jobs:
           context: .
           push: false
           cache-from: |
-            type=local,src=/tmp/.buildx-cache/go-builder
-            type=local,src=/tmp/.buildx-cache/go-deps
+            type=local,src=./.cache/go-builder
+            type=local,src=./.cache/go-deps
           cache-to: |
-            type=local,dest=/tmp/.buildx-cache/go-builder-new,mode=max
+            type=local,dest=./.cache/go-builder-new,mode=max
           target: go-builder
 
       - name: Move cache
         run: |
-          rm -rf /tmp/.buildx-cache/go-builder
-          mv /tmp/.buildx-cache/go-builder-new /tmp/.buildx-cache/go-builder
+          rm -rf ./.cache/go-builder
+          mv ./.cache/go-builder-new ./.cache/go-builder
 
   tests:
     name: Tests
@@ -362,7 +362,7 @@ jobs:
       - name: Cache Docker layers (go-deps)
         uses: actions/cache@v3
         with:
-          path: /tmp/.buildx-cache/go-deps
+          path: ./.cache/go-deps
           key: ${{ runner.os }}-go-deps-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-go-deps-buildx-
@@ -370,7 +370,7 @@ jobs:
       - name: Cache Docker layers (cpp-builder)
         uses: actions/cache@v3
         with:
-          path: /tmp/.buildx-cache/cpp-builder
+          path: ./.cache/cpp-builder
           key: ${{ runner.os }}-cpp-builder-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-cpp-builder-buildx-
@@ -378,7 +378,7 @@ jobs:
       - name: Cache Docker layers (tests)
         uses: actions/cache@v3
         with:
-          path: /tmp/.buildx-cache/tests
+          path: ./.cache/tests
           key: ${{ runner.os }}-tests-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-tests-buildx-
@@ -389,17 +389,17 @@ jobs:
           context: .
           push: false
           cache-from: |
-            type=local,src=/tmp/.buildx-cache/tests
-            type=local,src=/tmp/.buildx-cache/cpp-builder
-            type=local,src=/tmp/.buildx-cache/go-deps
+            type=local,src=./.cache/tests
+            type=local,src=./.cache/cpp-builder
+            type=local,src=./.cache/go-deps
           cache-to: |
-            type=local,dest=/tmp/.buildx-cache/tests-new,mode=max
+            type=local,dest=./.cache/tests-new,mode=max
           target: tests
 
       - name: Move cache
         run: |
-          rm -rf /tmp/.buildx-cache/tests
-          mv /tmp/.buildx-cache/tests-new /tmp/.buildx-cache/tests
+          rm -rf ./.cache/tests
+          mv ./.cache/tests-new ./.cache/tests
 
   final:
     name: Final
@@ -432,7 +432,7 @@ jobs:
       - name: Cache Docker layers (cpp-builder)
         uses: actions/cache@v3
         with:
-          path: /tmp/.buildx-cache/cpp-builder
+          path: ./.cache/cpp-builder
           key: ${{ runner.os }}-cpp-builder-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-cpp-builder-buildx-
@@ -440,7 +440,7 @@ jobs:
       - name: Cache Docker layers (go-builder)
         uses: actions/cache@v3
         with:
-          path: /tmp/.buildx-cache/go-builder
+          path: ./.cache/go-builder
           key: ${{ runner.os }}-go-builder-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-go-builder-buildx-
@@ -448,7 +448,7 @@ jobs:
       - name: Cache Docker layers (final)
         uses: actions/cache@v3
         with:
-          path: /tmp/.buildx-cache/final
+          path: ./.cache/final
           key: ${{ runner.os }}-final-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-final-buildx-
@@ -459,14 +459,14 @@ jobs:
           context: .
           push: false
           cache-from: |
-            type=local,src=/tmp/.buildx-cache/final
-            type=local,src=/tmp/.buildx-cache/go-builder
-            type=local,src=/tmp/.buildx-cache/cpp-builder
+            type=local,src=./.cache/final
+            type=local,src=./.cache/go-builder
+            type=local,src=./.cache/cpp-builder
           cache-to: |
-            type=local,dest=/tmp/.buildx-cache/final-new,mode=max
+            type=local,dest=./.cache/final-new,mode=max
           target: final
 
       - name: Move cache
         run: |
-          rm -rf /tmp/.buildx-cache/final
-          mv /tmp/.buildx-cache/final-new /tmp/.buildx-cache/final
+          rm -rf ./.cache/final
+          mv ./.cache/final-new ./.cache/final
