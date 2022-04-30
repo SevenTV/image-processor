@@ -23,7 +23,8 @@ orbs:
               when: always
               name: Setup the runner
               command: |
-                sh -c "ssh-keyscan github.com >> ~/.ssh/known_hosts"
+                mkdir -p ~/.ssh 
+                ssh-keyscan github.com >> ~/.ssh/known_hosts
                 docker context create builder
                 docker buildx create --name=builder --use builder
       cleanup:
@@ -48,8 +49,8 @@ jobs:
           name: Install Deps
           command: |
             echo 'export NVM_DIR="$HOME/.nvm"' >> "$BASH_ENV";
-            sudo apt-get update
-            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            apt-get update
+            DEBIAN_FRONTEND=noninteractive apt-get install -y \
               make \
               build-essential \
               python3 \
