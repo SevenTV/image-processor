@@ -76,10 +76,14 @@ jobs:
       go-deps: ${{ steps.changes.outputs.go-deps }}
       tests: ${{ steps.changes.outputs.tests }}
       final: ${{ steps.changes.outputs.final }}
+    concurrency:
+      group: ${{ github.workflow }}-chnages-${{ github.ref }}
+      cancel-in-progress: true
     steps:
       - uses: dorny/paths-filter@v2
         id: changes
         with:
+          head: ${{ github.ref }}
           filters: |
             third-party:
               - 'cpp/third-party/**'
