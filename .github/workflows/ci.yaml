@@ -375,6 +375,30 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-deps-buildx-
 
+      - name: Cache Docker layers (deps-builder)
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache/deps-builder
+          key: ${{ runner.os }}-deps-builder-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-deps-builder-buildx-
+
+      - name: Cache Docker layers (deps)
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache/deps
+          key: ${{ runner.os }}-deps-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-deps-buildx-
+
+      - name: Cache Docker layers (cpp-builder)
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache/deps
+          key: ${{ runner.os }}-cpp-builder-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-cpp-builder-buildx-
+
       - name: Cache Docker layers (tests)
         uses: actions/cache@v3
         with:
@@ -390,6 +414,9 @@ jobs:
           push: false
           cache-from: |
             type=local,src=/tmp/.buildx-cache/tests
+            type=local,src=/tmp/.buildx-cache/cpp-builder
+            type=local,src=/tmp/.buildx-cache/deps
+            type=local,src=/tmp/.buildx-cache/deps-builder
             type=local,src=/tmp/.buildx-cache/go-deps
           cache-to: |
             type=local,dest=/tmp/.buildx-cache/tests-new
