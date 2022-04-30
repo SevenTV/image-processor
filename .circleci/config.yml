@@ -104,13 +104,17 @@ jobs:
       image: ubuntu:latest
     steps:
       - checkout
+      - restore_cache:
+          keys:
+            - v1-third-party-{{ .Branch }}
+            - v1-third-party
       - run:
           name: Fetch Submodules
           command: |
             git submodule update --init --recursive
       - restore_cache:
           keys:
-            - "v1-deps-builder-{{ .Branch }}"
+            - v1-deps-builder-{{ .Branch }}
             - v1-deps-builder
       - run:
           name: Build application Docker image
