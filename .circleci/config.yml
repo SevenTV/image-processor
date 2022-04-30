@@ -96,7 +96,8 @@ jobs:
             - /home/circle/.cache/go-build
   deps-builder:
     resource_class: seventv/self-hosted
-    machine: true
+    machine:
+      image: ubuntu:latest
     steps:
       - checkout
       - run:
