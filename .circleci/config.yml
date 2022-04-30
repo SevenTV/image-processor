@@ -23,10 +23,20 @@ orbs:
               when: always
               name: Setup the runner
               command: |
-                ln -s . /opt/circleci/workdir/current
+                (stat /opt/circleci/workdir/current && rm /opt/circleci/workdir/current) || true
+                (stat ~/.ssh/known_hosts && rm rm ~/.ssh/known_hosts) || true
+
+                ln -s $(pwd) /opt/circleci/workdir/current
                 mkdir -p ~/.ssh 
                 ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+                docker ps -q | grep . && docker kill $(docker ps -q) || true
+                docker system prune --force --all
+
+                docker context ls | grep builder && docker context rm builder || true
                 docker context create builder
+
+                docker buildx ls | grep builder && docker buildx rm builder || true
                 docker buildx create --name=builder --use builder
       cleanup:
         steps:
