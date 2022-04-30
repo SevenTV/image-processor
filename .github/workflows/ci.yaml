@@ -394,7 +394,7 @@ jobs:
       - name: Cache Docker layers (cpp-builder)
         uses: actions/cache@v3
         with:
-          path: /tmp/.buildx-cache/deps
+          path: /tmp/.buildx-cache/cpp-builder
           key: ${{ runner.os }}-cpp-builder-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-cpp-builder-buildx-
@@ -455,6 +455,14 @@ jobs:
           install: true
           endpoint: builders
 
+      - name: Cache Docker layers (go-deps)
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache/go-deps
+          key: ${{ runner.os }}-go-deps-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-go-deps-buildx-
+
       - name: Cache Docker layers (deps-builder)
         uses: actions/cache@v3
         with:
@@ -474,18 +482,10 @@ jobs:
       - name: Cache Docker layers (cpp-builder)
         uses: actions/cache@v3
         with:
-          path: /tmp/.buildx-cache/deps
+          path: /tmp/.buildx-cache/cpp-builder
           key: ${{ runner.os }}-cpp-builder-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-cpp-builder-buildx-
-
-      - name: Cache Docker layers (go-deps)
-        uses: actions/cache@v3
-        with:
-          path: /tmp/.buildx-cache/go-deps
-          key: ${{ runner.os }}-go-deps-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-go-deps-buildx-
 
       - name: Cache Docker layers (go-builder)
         uses: actions/cache@v3
