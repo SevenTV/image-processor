@@ -40,6 +40,7 @@ out/
 *.ptx.gz
 *_g
 
+.cache
 cpp/build
 cpp/out
 cpp/third-party/dav1d/build 
@@ -49,6 +50,5 @@ cpp/third-party/gifski/target
 cpp/third-party/opencv/build 
 cpp/third-party/rav1e/target
 cpp/third-party/FFmpeg/build
-export/
 
 Dockerfile
