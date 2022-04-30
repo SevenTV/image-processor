@@ -23,7 +23,7 @@ orbs:
               when: always
               name: Setup the runner
               command: |
-                ln -s . ~/work
+                ln -s . /opt/circleci/workdir/current
                 mkdir -p ~/.ssh 
                 ssh-keyscan github.com >> ~/.ssh/known_hosts
                 docker context create builder
@@ -34,7 +34,7 @@ orbs:
               when: always
               name: Cleanup the runner
               command: |
-                rm ~/work
+                rm /opt/circleci/workdir/current
                 rm ~/.ssh/known_hosts
                 docker buildx rm builder
                 docker context rm builder
@@ -44,7 +44,7 @@ orbs:
 jobs:
   lint:
     docker:
-      - image: ubuntu:22.04
+      - image: cimg/base:2021.04
     steps:
       - checkout
       - run:
@@ -109,30 +109,30 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - v1-third-party-{{ .Branch }}
-            - v1-third-party
+            - third-party-{{ .Branch }}
+            - third-party
       - run:
           name: Fetch Submodules
           command: |
             git submodule update --init --recursive
       - save_cache:
-          key: v1-third-party-{{ .Branch }}-{{ epoch }}
+          key: third-party-{{ .Branch }}-{{ epoch }}
           paths:
-            - ~/work/cpp/third-party
+            - /opt/circleci/workdir/current/cpp/third-party
       - restore_cache:
           keys:
-            - v1-deps-builder-{{ .Branch }}
-            - v1-deps-builder
+            - deps-builder-{{ .Branch }}
+            - deps-builder
       - run:
           name: Build application Docker image
           command: |
             docker buildx build \
               --target deps-builder \
-              --cache-from=type=local,src=~/work/.cache/deps-builder \
-              --cache-to=type=local,dest=~/work/.cache/deps-builder \
+              --cache-from=type=local,src=/opt/circleci/workdir/current/.cache/deps-builder \
+              --cache-to=type=local,dest=/opt/circleci/workdir/current/.cache/deps-builder \
               --progress plain \
               .
       - save_cache:
-          key: v1-deps-builder-{{ .Branch }}-{{ epoch }}
+          key: deps-builder-{{ .Branch }}-{{ epoch }}
           paths:
-            - ~/work/.cache/deps-builder
+            - /opt/circleci/workdir/current/.cache/deps-builder
