@@ -51,8 +51,8 @@ jobs:
           name: Install Deps
           command: |
             echo 'export NVM_DIR="$HOME/.nvm"' >> "$BASH_ENV";
-            apt-get update
-            DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            sudo apt-get update
+            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
               make \
               build-essential \
               python3 \
