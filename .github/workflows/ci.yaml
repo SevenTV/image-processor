@@ -88,10 +88,24 @@ jobs:
           install: true
           endpoint: builders
 
+      - name: Cache Docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache/deps-builder
+          key: ${{ runner.os }}-deps-builder-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-deps-builder-buildx-
+
       - name: Build the cache
         uses: docker/build-push-action@v2
         with:
           context: .
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          push: false
+          cache-from: type=local,src=/tmp/.buildx-cache/deps-builder
+          cache-to: type=local,dest=/tmp/.buildx-cache/deps-builder-new,mode=max
           target: deps-builder
+
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache/deps-builder
+          mv /tmp/.buildx-cache/deps-builder-new /tmp/.buildx-cache/deps-builder
