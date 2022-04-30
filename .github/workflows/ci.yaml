@@ -68,7 +68,7 @@ jobs:
 
   deps-builder:
     name: Deps Builder
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     concurrency:
       group: ${{ github.workflow }}-deps-builder-${{ github.ref }}
       cancel-in-progress: true
@@ -114,7 +114,7 @@ jobs:
 
   deps:
     name: Deps
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     needs:
       - deps-builder
     concurrency:
@@ -172,7 +172,7 @@ jobs:
 
   cpp-builder:
     name: Cpp Builder
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     needs:
       - deps
     concurrency:
@@ -230,7 +230,7 @@ jobs:
 
   go-deps:
     name: Go Deps
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     concurrency:
       group: ${{ github.workflow }}-go-deps-${{ github.ref }}
       cancel-in-progress: true
@@ -277,7 +277,7 @@ jobs:
 
   go-builder:
     name: Go Builder
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     needs:
       - go-deps
     concurrency:
@@ -335,7 +335,7 @@ jobs:
 
   tests:
     name: Tests
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     needs:
       - cpp-builder
       - go-deps
@@ -403,7 +403,7 @@ jobs:
 
   final:
     name: Final
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     needs:
       - go-builder
       - cpp-builder

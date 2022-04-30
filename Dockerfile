@@ -171,11 +171,12 @@ FROM go-deps as tests
     WORKDIR /tmp/build
     
     COPY assets /tmp/assets
+    COPY --from=cpp-builder /usr/local /usr/local
     COPY --from=cpp-builder /tmp/build/out /usr/local/bin
 
     COPY go .
 
-    RUN make test
+    RUN ldconfig && make test
 
     CMD ["make", "test"]
 
