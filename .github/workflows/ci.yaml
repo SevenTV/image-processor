@@ -68,7 +68,7 @@ jobs:
 
   changes:
     name: Code Changes
-    runs-on: ubuntu:latest
+    runs-on: ubuntu-latest
     outputs:
       third-party: ${{ steps.changes.outputs.third-party }}
       cpp: ${{ steps.changes.outputs.cpp }}
