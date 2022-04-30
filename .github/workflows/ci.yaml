@@ -3,6 +3,7 @@ on:
     branches:
       - master
       - dev
+      - troy/init
   pull_request:
 
 jobs:
