@@ -124,6 +124,7 @@ jobs:
       - run:
           name: Fetch Submodules
           command: |
+            git submodule sync
             git submodule update --init --recursive
       - save_cache:
           key: third-party-{{ .Branch }}-{{ epoch }}
