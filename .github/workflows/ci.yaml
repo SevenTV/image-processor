@@ -68,7 +68,7 @@ jobs:
 
   deps-builder:
     name: Deps Builder
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     concurrency:
       group: ${{ github.workflow }}-deps-builder-${{ github.ref }}
       cancel-in-progress: true
