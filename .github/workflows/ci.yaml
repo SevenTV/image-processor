@@ -31,13 +31,13 @@ jobs:
       - id: skip_check
         uses: fkirc/skip-duplicate-actions@v4.0.0
         with:
-          concurrent_skipping: same_content
+          concurrent_skipping: same_content_newer
 
   lint:
     name: Lint
     needs:
       - pre-job
-    if: ${{ needs.pre_job.outputs.should_skip != 'true' }}
+    if: ${{ needs.pre-job.outputs.should_skip != 'true' }}
     runs-on: ubuntu-latest
     concurrency:
       group: ${{ github.workflow }}-lint-${{ github.ref }}
@@ -101,7 +101,7 @@ jobs:
     needs:
       - pre-job
       - lint
-    if: ${{ needs.pre_job.outputs.should_skip != 'true' && failure() }}
+    if: ${{ needs.pre-job.outputs.should_skip != 'true' && failure() }}
 
     steps:
       - name: Cancel current workflow run
@@ -119,7 +119,7 @@ jobs:
     runs-on: self-hosted
     needs:
       - pre-job
-    if: ${{ needs.pre_job.outputs.should_skip != 'true' }}
+    if: ${{ needs.pre-job.outputs.should_skip != 'true' }}
     concurrency:
       group: ${{ github.workflow }}-build-${{ github.ref }}
       cancel-in-progress: true
@@ -168,7 +168,7 @@ jobs:
       - build
       - lint
       - pre-job
-    if: ${{ needs.pre_job.outputs.should_skip != 'true' && ((github.event == 'workflow_dispatch' && inputs.deploy != 'none') || (github.event == 'push' && github.ref_type == 'branch' && (github.ref_name == 'master' || github.ref_name == 'dev'))) }}
+    if: ${{ needs.pre-job.outputs.should_skip != 'true' && ((github.event == 'workflow_dispatch' && inputs.deploy != 'none') || (github.event == 'push' && github.ref_type == 'branch' && (github.ref_name == 'master' || github.ref_name == 'dev'))) }}
     runs-on: self-hosted
     concurrency:
       group: ${{ github.workflow }}-deploy-${{ github.ref }}
