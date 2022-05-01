@@ -5,7 +5,7 @@ on:
       - dev
       - troy/init
   pull_request:
-  workflow_call:
+  workflow_dispatch:
     inputs:
       deploy:
         description: "Deploy location"
@@ -168,7 +168,7 @@ jobs:
       - build
       - lint
       - pre-job
-    if: ${{ needs.pre_job.outputs.should_skip != 'true' && ((github.event == 'workflow_call' && inputs.deploy != 'none') || (github.event == 'push' && github.ref_type == 'branch' && (github.ref_name == 'master' || github.ref_name == 'dev'))) }}
+    if: ${{ needs.pre_job.outputs.should_skip != 'true' && ((github.event == 'workflow_dispatch' && inputs.deploy != 'none') || (github.event == 'push' && github.ref_type == 'branch' && (github.ref_name == 'master' || github.ref_name == 'dev'))) }}
     runs-on: self-hosted
     concurrency:
       group: ${{ github.workflow }}-deploy-${{ github.ref }}
