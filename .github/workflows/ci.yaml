@@ -104,12 +104,12 @@ jobs:
           cache-from: type=registry,ref=harbor.disembark.dev/build-cache/image-processor:buildcache
           cache-to: type=registry,ref=harbor.disembark.dev/build-cache/image-processor:buildcache,mode=max
           outputs: |
-            type=oci,dest=./.cache/image.tar
+            type=oci,dest=image.tar
           target: final
 
       - name: Upload docker image
         uses: actions/upload-artifact@v3
         with:
           name: image.tar
-          path: ./.cache/image.tar
+          path: image.tar
           retention-days: 3
