@@ -95,6 +95,8 @@ jobs:
           context: .
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          tags: |
+            image-processor:latest
           outputs: |
             type=docker,dest=image.tar
           target: final
@@ -109,7 +111,9 @@ jobs:
   deploy:
     name: Deploy
     runs-on: self-hosted
-    needs: build
+    needs:
+      - build
+      - lint
     steps:
       - id: buildx-context
         run: |
@@ -125,6 +129,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: docker-image
+
       - name: Load image
         run: |
           docker load --input image.tar
