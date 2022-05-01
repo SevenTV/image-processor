@@ -93,16 +93,39 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: .
-          push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
           outputs: |
-            type=oci,dest=image.tar
+            type=docker,dest=image.tar
           target: final
 
       - name: Upload docker image
         uses: actions/upload-artifact@v3
         with:
-          name: image.tar
+          name: docker-image
           path: image.tar
           retention-days: 3
+
+  deploy:
+    name: Deploy
+    runs-on: self-hosted
+    needs: build
+    steps:
+      - id: buildx-context
+        run: |
+          docker context create builders
+
+      - uses: docker/setup-buildx-action@v1
+        id: buildx
+        with:
+          install: true
+          endpoint: builders
+
+      - name: Download artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: docker-image
+      - name: Load image
+        run: |
+          docker load --input image.tar
+          docker image ls -a
