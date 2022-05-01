@@ -146,7 +146,17 @@ jobs:
           install: true
           endpoint: builders
 
-      - name: Build the cache
+      - name: Build the cpp-cache
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          cache-from: |
+            type=gha
+          cache-to: |
+            type=gha,mode=max
+          target: cpp-builder
+
+      - name: Build the golang-cache
         uses: docker/build-push-action@v2
         with:
           context: .
