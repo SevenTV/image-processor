@@ -111,6 +111,9 @@ jobs:
   deploy:
     name: Deploy
     runs-on: self-hosted
+    concurrency:
+      group: ${{ github.workflow }}-deploy-${{ github.ref }}
+      cancel-in-progress: true
     needs:
       - build
       - lint
