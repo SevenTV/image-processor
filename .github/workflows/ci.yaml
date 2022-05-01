@@ -17,12 +17,16 @@ on:
           - staging
           - none
 jobs:
-  pre_job:
+  pre-job:
     # continue-on-error: true # Uncomment once integration is finished
     runs-on: ubuntu-latest
     # Map a step output to a job output
     outputs:
       should_skip: ${{ steps.skip_check.outputs.should_skip }}
+    concurrency:
+      group: ${{ github.workflow }}-pre-job-${{ github.ref }}
+      cancel-in-progress: true
+
     steps:
       - id: skip_check
         uses: fkirc/skip-duplicate-actions@v4.0.0
@@ -98,6 +102,7 @@ jobs:
       - pre-job
         - lint
     if: ${{ needs.pre_job.outputs.should_skip != 'true' && failure() }}
+
     steps:
       - name: Cancel current workflow run
         uses: actions/github-script@v6
@@ -168,6 +173,7 @@ jobs:
     concurrency:
       group: ${{ github.workflow }}-deploy-${{ github.ref }}
       cancel-in-progress: true
+
     steps:
       - id: buildx-context
         run: |
