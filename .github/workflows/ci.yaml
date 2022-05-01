@@ -89,20 +89,13 @@ jobs:
           install: true
           endpoint: builders
 
-      - name: Log into Harbor Registry
-        uses: docker/login-action@v1
-        with:
-          registry: harbor.disembark.dev
-          username: robot$deploy-7tv
-          password: ${{ secrets.REGISTRY_TOKEN }}
-
       - name: Build the cache
         uses: docker/build-push-action@v2
         with:
           context: .
           push: false
-          cache-from: type=registry,ref=harbor.disembark.dev/build-cache/image-processor:buildcache
-          cache-to: type=registry,ref=harbor.disembark.dev/build-cache/image-processor:buildcache,mode=max
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           outputs: |
             type=oci,dest=image.tar
           target: final
