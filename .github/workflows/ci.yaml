@@ -1,3 +1,5 @@
+name: Image Processor Lint, Build, Test, Deploy
+
 on:
   push:
     branches:
@@ -15,6 +17,11 @@ on:
           - production
           - staging
           - none
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   pre-job:
     # continue-on-error: true # Uncomment once integration is finished
@@ -139,25 +146,14 @@ jobs:
           install: true
           endpoint: builders
 
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v1
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Build the cache
         uses: docker/build-push-action@v2
         with:
           context: .
           cache-from: |
             type=gha
-            type=registry,ref=ghcr.io/${{ github.repository }}:buildcache,mode=max
-            type=registry,ref=ghcr.io/${{ github.repository }}:buildcache-${{ github.ref_name }},mode=max
           cache-to: |
             type=gha,mode=max
-            type=registry,ref=ghcr.io/${{ github.repository }}:buildcache
-            type=registry,ref=ghcr.io/${{ github.repository }}:buildcache-${{ github.ref_name }}
           tags: |
             image-processor:latest
           build-args: |
