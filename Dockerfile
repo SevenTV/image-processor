@@ -131,7 +131,7 @@ FROM deps as cpp-builder
 #
 # Download and install all deps required to run tests and build the go application
 #
-FROM golang:$GOLANG_TAG as go-deps
+FROM golang:$GOLANG_TAG as go-builder
     WORKDIR /tmp/build
 
     COPY go/go.mod .
@@ -148,11 +148,8 @@ FROM golang:$GOLANG_TAG as go-deps
         apt-get clean -y && \
         rm -rf /var/cache/apt/archives /var/lib/apt/lists/*
 
-#
-# Build the go application
-#
-FROM go-deps as go-builder
-    WORKDIR /tmp/build
+    COPY go .
+
 
     ARG BUILDER
     ARG VERSION
@@ -160,25 +157,14 @@ FROM go-deps as go-builder
     ENV IMAGES_BUILDER=${BUILDER}
     ENV IMAGES_VERSION=${VERSION}
 
-    COPY go .
-
     RUN make
 
-#
-# Run the go tests
-#
-FROM go-deps as tests
-    WORKDIR /tmp/build
-    
     COPY assets /tmp/assets
+
     COPY --from=cpp-builder /usr/local /usr/local
     COPY --from=cpp-builder /tmp/build/out /usr/local/bin
 
-    COPY go .
-
     RUN ldconfig && make test
-
-    CMD ["make", "test"]
 
 #
 # final squashed image
