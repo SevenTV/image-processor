@@ -67,7 +67,7 @@ jobs:
         run: make lint
 
   build:
-    name: Docker Build
+    name: Build And Test
     runs-on: self-hosted
     concurrency:
       group: ${{ github.workflow }}-build-${{ github.ref }}
