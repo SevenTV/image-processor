@@ -15,7 +15,11 @@ import (
 	"github.com/seventv/image-processor/go/internal/configure"
 	"github.com/seventv/image-processor/go/internal/global"
 	"github.com/seventv/image-processor/go/internal/health"
+	"github.com/seventv/image-processor/go/internal/image_processor"
 	"github.com/seventv/image-processor/go/internal/monitoring"
+	"github.com/seventv/image-processor/go/internal/svc/kubemq"
+	"github.com/seventv/image-processor/go/internal/svc/prometheus"
+	"github.com/seventv/image-processor/go/internal/svc/s3"
 	"go.uber.org/zap"
 )
 
@@ -37,10 +41,12 @@ func main() {
 	config := configure.New()
 
 	exitStatus, err := panicwrap.BasicWrap(func(s string) {
-		zap.S().Error("panic: ", s)
+		zap.S().Errorw("panic detected",
+			"panic", s,
+		)
 	})
 	if err != nil {
-		zap.S().Errorw("failed to setup panic handler: ",
+		zap.S().Errorw("failed to setup panic handler",
 			"error", err,
 		)
 		os.Exit(2)
@@ -57,12 +63,47 @@ func main() {
 		zap.S().Infof("build.User: %s", User)
 	}
 
-	zap.S().Debug("MaxProcs: ", runtime.GOMAXPROCS(0))
+	zap.S().Debugf("MaxProcs: %d", runtime.GOMAXPROCS(0))
 
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 
 	gCtx, cancel := global.WithCancel(global.New(context.Background(), config))
+
+	{
+		gCtx.Inst().KubeMQ, err = kubemq.New(gCtx, kubemq.Options{
+			Host:      config.KubeMQ.Host,
+			Port:      config.KubeMQ.Port,
+			ClientId:  config.KubeMQ.ClientId,
+			AuthToken: config.KubeMQ.AuthToken,
+		})
+		if err != nil {
+			zap.S().Fatalw("failed to setup kubemq handler",
+				"error", err,
+			)
+		}
+	}
+
+	{
+		gCtx.Inst().S3, err = s3.New(gCtx, s3.Options{
+			Region:      config.S3.Region,
+			Endpoint:    config.S3.Endpoint,
+			AccessToken: config.S3.AccessToken,
+			SecretKey:   config.S3.SecretKey,
+		})
+		if err != nil {
+			zap.S().Fatalw("failed to setup s3 handler",
+				"error", err,
+			)
+		}
+	}
+
+	{
+		gCtx.Inst().Prometheus = prometheus.New(prometheus.Options{
+			Labels: config.Monitoring.Labels.ToPrometheus(),
+		})
+	}
+
 	wg := sync.WaitGroup{}
 
 	if gCtx.Config().Health.Enabled {
@@ -99,6 +140,7 @@ func main() {
 		close(done)
 	}()
 
+	image_processor.Run(gCtx)
 	zap.S().Info("running")
 
 	<-done

@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -89,19 +90,47 @@ type Config struct {
 	ConfigFile string `mapstructure:"config" json:"config"`
 	NoHeader   bool   `mapstructure:"noheader" json:"noheader"`
 
+	Worker struct {
+		Jobs int `mapstructure:"jobs" json:"jobs"`
+	} `mapstructure:"worker" json:"worker"`
+
 	Health struct {
 		Bind    string `mapstructure:"bind" json:"bind"`
 		Enabled bool   `mapstructure:"enabled" json:"enabled"`
 	} `mapstructure:"health" json:"health"`
 
+	KubeMQ struct {
+		Host      string `mapstructure:"host" json:"host"`
+		Port      int    `mapstructure:"port" json:"port"`
+		ClientId  string `mapstructure:"client_id" json:"client_id"`
+		AuthToken string `mapstructure:"auth_token" json:"auth_token"`
+	} `mapstructure:"kubemq" json:"kubemq"`
+
+	S3 struct {
+		Region      string `mapstructure:"region" json:"region"`
+		Endpoint    string `mapstructure:"endpoint" json:"endpoint"`
+		AccessToken string `mapstructure:"access_token" json:"access_token"`
+		SecretKey   string `mapstructure:"secret_key" json:"secret_key"`
+	} `mapstructure:"s3" json:"s3"`
+
 	Monitoring struct {
-		Bind    string     `mapstructure:"bind" json:"bind"`
-		Enabled bool       `mapstructure:"enabled" json:"enabled"`
-		Labels  []KeyValue `mapstructure:"labels" json:"labels"`
+		Bind    string `mapstructure:"bind" json:"bind"`
+		Enabled bool   `mapstructure:"enabled" json:"enabled"`
+		Labels  Labels `mapstructure:"labels" json:"labels"`
 	} `mapstructure:"monitoring" json:"monitoring"`
 }
 
-type KeyValue struct {
+type Labels []struct {
 	Key   string `mapstructure:"key" json:"key"`
 	Value string `mapstructure:"value" json:"value"`
+}
+
+func (l Labels) ToPrometheus() prometheus.Labels {
+	mp := prometheus.Labels{}
+
+	for _, v := range l {
+		mp[v.Key] = v.Value
+	}
+
+	return mp
 }

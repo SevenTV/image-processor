@@ -134,22 +134,22 @@ FROM deps as cpp-builder
 FROM golang:$GOLANG_TAG as go-builder
     WORKDIR /tmp/build
 
-    COPY go/go.mod .
-    COPY go/go.sum .
-    COPY go/Makefile .
-
     # update the apt repo and install any deps we might need.
     RUN apt-get update && \
         apt-get install -y \
             make \
             git && \
-        make deps && \
         apt-get autoremove -y && \
         apt-get clean -y && \
         rm -rf /var/cache/apt/archives /var/lib/apt/lists/*
 
-    COPY go .
+    COPY go/go.mod .
+    COPY go/go.sum .
+    COPY go/Makefile .
 
+    RUN make deps
+
+    COPY go .
 
     ARG BUILDER
     ARG VERSION

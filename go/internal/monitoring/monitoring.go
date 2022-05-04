@@ -11,7 +11,7 @@ import (
 
 func New(gCtx global.Context) <-chan struct{} {
 	r := prometheus.NewRegistry()
-	// gCtx.Inst().Monitoring.Register(r)
+	gCtx.Inst().Prometheus.Register(r)
 
 	server := fasthttp.Server{
 		Handler: fasthttpadaptor.NewFastHTTPHandler(promhttp.HandlerFor(r, promhttp.HandlerOpts{

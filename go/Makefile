@@ -4,15 +4,15 @@ BUILDER := "unknown"
 VERSION := "unknown"
 
 ifeq ($(origin IMAGES_BUILDER),undefined)
-	BUILDER = $(shell git config --get user.name);
+	BUILDER = $(shell git config --get user.name)
 else
-	BUILDER = ${IMAGES_BUILDER};
+	BUILDER = ${IMAGES_BUILDER}
 endif
 
 ifeq ($(origin IMAGES_VERSION),undefined)
-	VERSION = $(shell git rev-parse HEAD);
+	VERSION = $(shell git rev-parse HEAD)
 else
-	VERSION = ${IMAGES_VERSION};
+	VERSION = ${IMAGES_VERSION}
 endif
 
 build:
@@ -34,7 +34,7 @@ dev_deps:
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@master # TODO fix this version, currently master to lint go1.18 files
 
 test:
-	go test -count=1 -cover ./...
+	go test -count=1 -cover --tags test ./...
 
 clean:
 	rm -rf bin
