@@ -14,7 +14,3 @@ type Options struct {
 	AccessToken string
 	SecretKey   string
 }
-
-type _s string
-
-const FileKey = _s("s3_mock_files")

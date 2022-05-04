@@ -1,6 +1,16 @@
 package testutil
 
-import "testing"
+import (
+	"os"
+	"testing"
+)
+
+func ReadFile(t *testing.T, file string) []byte {
+	data, err := os.ReadFile(file)
+	IsNil(t, err, "File was found")
+
+	return data
+}
 
 func Assert[T comparable](t *testing.T, expected T, value T, message string) {
 	if expected != value {

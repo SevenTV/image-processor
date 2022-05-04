@@ -91,7 +91,8 @@ type Config struct {
 	NoHeader   bool   `mapstructure:"noheader" json:"noheader"`
 
 	Worker struct {
-		Jobs int `mapstructure:"jobs" json:"jobs"`
+		Jobs    int    `mapstructure:"jobs" json:"jobs"`
+		TempDir string `mapstructure:"temp_dir" json:"temp_dir"`
 	} `mapstructure:"worker" json:"worker"`
 
 	Health struct {

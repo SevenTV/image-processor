@@ -103,9 +103,6 @@ func (m *MockQueueTransactionMessageResponse) Msg() *kubemq.QueueMessage {
 func (m *MockQueueTransactionMessageResponse) Reject() error {
 	err := fmt.Errorf("already responded")
 	m.once.Do(func() {
-		m.arr.mtx.Lock()
-		m.arr.arr = append(m.arr.arr, m.msg)
-		m.arr.mtx.Unlock()
 		err = nil
 	})
 	return err

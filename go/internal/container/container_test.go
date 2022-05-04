@@ -2,7 +2,6 @@ package container
 
 import (
 	"fmt"
-	"os"
 	"path"
 	"runtime"
 	"testing"
@@ -18,22 +17,13 @@ type testCase struct {
 	ExpectedType types.Type
 }
 
-func readAssert(t *testing.T, file string) []byte {
-	data, err := os.ReadFile(file)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return data
-}
-
 func makeCase(t *testing.T, filename string, expected types.Type) testCase {
 	_, cwd, _, _ := runtime.Caller(0)
 	file := path.Join(path.Dir(cwd), "..", "..", "..", "assets", filename)
 
 	return testCase{
 		Filename:     filename,
-		Data:         readAssert(t, file),
+		Data:         testutil.ReadFile(t, file),
 		ExpectedType: expected,
 	}
 }

@@ -6,6 +6,7 @@ require (
 	github.com/SevenTV/Common v0.0.0-20220416145422-0b3ce3e265e2
 	github.com/aws/aws-sdk-go v1.44.6
 	github.com/bugsnag/panicwrap v1.3.4
+	github.com/google/uuid v1.1.2
 	github.com/h2non/filetype v1.1.3
 	github.com/kubemq-io/kubemq-go v1.7.6
 	github.com/prometheus/client_golang v1.12.1

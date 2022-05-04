@@ -1,11 +1,11 @@
 package image_processor
 
 import (
-	"context"
 	"encoding/json"
 	"runtime"
 	"time"
 
+	"github.com/kubemq-io/kubemq-go"
 	"github.com/seventv/image-processor/go/internal/global"
 	"github.com/seventv/image-processor/go/internal/instance"
 	"go.uber.org/multierr"
@@ -49,7 +49,7 @@ func Run(gCtx global.Context) {
 
 		worker := <-workers
 
-		ctx, cancel := context.WithCancel(gCtx)
+		ctx, cancel := global.WithCancel(gCtx)
 		go func() {
 			tick := time.NewTicker(time.Second * 15)
 			defer tick.Stop()
@@ -72,7 +72,12 @@ func Run(gCtx global.Context) {
 				cancel()
 				blockers <- struct{}{}
 			}()
-			err := worker.Work(ctx, t)
+			result := Result{
+				ID:    t.ID,
+				State: ResultStateFailed,
+			}
+
+			err := worker.Work(ctx, t, &result)
 			if err != nil {
 				err = multierr.Append(err, response.Reject())
 				zap.S().Errorw("task processing failed",
@@ -82,6 +87,28 @@ func Run(gCtx global.Context) {
 				zap.S().Errorw("failed to ack task",
 					"error", err,
 				)
+			} else {
+				result.State = ResultStateSuccess
+			}
+
+			if err != nil {
+				result.Message = err.Error()
+			}
+
+			resultData, err := json.Marshal(result)
+			if err != nil {
+				zap.S().Errorw("failed to marshal result",
+					"error", err,
+				)
+			} else {
+				if _, err := gCtx.Inst().KubeMQ.Send(ctx, kubemq.NewQueueMessage().
+					SetChannel("image-processor-results").
+					SetBody(resultData),
+				); err != nil {
+					zap.S().Errorw("failed to publish result",
+						"error", err,
+					)
+				}
 			}
 		}()
 

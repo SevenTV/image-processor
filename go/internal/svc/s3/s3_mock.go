@@ -3,7 +3,6 @@ package s3
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"io/ioutil"
 
@@ -17,12 +16,7 @@ type MockInstance struct {
 	files *sync_map.Map[string, *sync_map.Map[string, []byte]]
 }
 
-func NewMock(ctx context.Context) (instance.S3, error) {
-	files, ok := ctx.Value(FileKey).(map[string]map[string][]byte)
-	if !ok {
-		return nil, fmt.Errorf("no mock files detected")
-	}
-
+func NewMock(ctx context.Context, files map[string]map[string][]byte) (instance.S3, error) {
 	mp := &sync_map.Map[string, *sync_map.Map[string, []byte]]{}
 	for k, v := range files {
 		mp.Store(k, sync_map.FromStdMap(v))
