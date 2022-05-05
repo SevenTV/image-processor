@@ -32,7 +32,7 @@ func TestRun(t *testing.T) {
 
 	gCtx.Inst().S3, err = s3.NewMock(gCtx, map[string]map[string][]byte{
 		"input": {
-			"static-1.png": testutil.ReadFile(t, path.Join(assetDir, "static-1.png")),
+			"animated-2.gif": testutil.ReadFile(t, path.Join(assetDir, "animated-2.gif")),
 		},
 		"output": {},
 	})
@@ -43,15 +43,19 @@ func TestRun(t *testing.T) {
 	const TaskID = "batchest-test-123"
 
 	task, err := json.Marshal(Task{
-		ID: TaskID,
+		ID:    TaskID,
+		Flags: TaskFlagALL,
 		Input: TaskInput{
 			Bucket: "input",
-			Key:    "static-1.png",
+			Key:    "animated-2.gif",
 		},
 		Output: TaskOutput{
 			Bucket: "output",
 			Prefix: "",
 		},
+		SmallestMaxWidth:  96,
+		SmallestMaxHeight: 32,
+		Scales:            []int{1, 2, 3, 4},
 	})
 	testutil.IsNil(t, err, "task marshals")
 

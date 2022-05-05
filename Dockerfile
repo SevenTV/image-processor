@@ -78,7 +78,10 @@ FROM $BASE_IMG as deps
             libx264-163 \
             libx265-199 \
             libopenjp2-7 \
-            openssl && \
+            openssl \
+            libssl3 \
+            gifsicle \
+            optipng && \
         apt-get autoremove -y && \
         apt-get clean -y && \
         rm -rf /var/cache/apt/archives /var/lib/apt/lists/*
@@ -131,23 +134,33 @@ FROM deps as cpp-builder
 #
 # Download and install all deps required to run tests and build the go application
 #
-FROM golang:$GOLANG_TAG as go-builder
+FROM golang:$GOLANG_TAG as go
+
+FROM deps as go-builder
     WORKDIR /tmp/build
 
     # update the apt repo and install any deps we might need.
     RUN apt-get update && \
         apt-get install -y \
+            build-essential \
             make \
             git && \
         apt-get autoremove -y && \
         apt-get clean -y && \
         rm -rf /var/cache/apt/archives /var/lib/apt/lists/*
 
+    ENV PATH /usr/local/go/bin:$PATH
+    ENV GOPATH /go
+    ENV PATH $GOPATH/bin:$PATH
+    COPY --from=go /usr/local /usr/local
+    COPY --from=go /go /go
+
     COPY go/go.mod .
     COPY go/go.sum .
     COPY go/Makefile .
 
-    RUN make deps
+    RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH" && \
+        make deps
 
     COPY go .
 
@@ -162,9 +175,12 @@ FROM golang:$GOLANG_TAG as go-builder
     COPY assets /tmp/assets
 
     COPY --from=cpp-builder /usr/local /usr/local
-    COPY --from=cpp-builder /tmp/build/out /usr/local/bin
 
-    RUN ldconfig && make test
+    RUN ldconfig && make test && \
+        apt-get remove -y build-essential && \
+        apt-get autoremove -y && \
+        apt-get clean -y && \
+        rm -rf /var/cache/apt/archives /var/lib/apt/lists/*
 
 #
 # final squashed image

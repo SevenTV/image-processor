@@ -1,14 +1,15 @@
 .PHONY: build clean format external external_clean test lint
 
 build:
-	(stat build && cd build && ninja) || $(MAKE) _build
+	(stat build && cd build && ninja && (sudo ninja install || ninja install)) || $(MAKE) _build
 
 _build: clean
 	mkdir -p build && \
 	cd build && \
 	cmake -G Ninja \
 		.. && \
-	ninja
+	ninja && \
+	(sudo ninja install || ninja install)
 
 clean:
 	rm -rf build out bin

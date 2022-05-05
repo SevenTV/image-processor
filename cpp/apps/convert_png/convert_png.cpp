@@ -31,7 +31,7 @@ void syntax()
                  "types are png)."
               << std::endl
               << "  -o,--output FILENAME        : Output file location "
-                 "(supported types are webp, avif, gif)."
+                 " (supported types are webp, avif, gif)."
               << std::endl
               << "  -d,--delay D                : Delay of the next frame in "
                  "100s of a second. (default 4 = 40ms)"
@@ -146,8 +146,8 @@ int main(int argc, char* argv[])
         if (output.type == OutputType::AVIF) {
             auto encoder = avifEncoderCreate();
             encoder->maxThreads = std::thread::hardware_concurrency();
-            encoder->minQuantizer = 10;
-            encoder->maxQuantizer = 25;
+            encoder->minQuantizer = 5;
+            encoder->maxQuantizer = 20;
             encoder->minQuantizerAlpha = 0;
             encoder->maxQuantizerAlpha = 10;
             encoder->tileColsLog2 = 2;
@@ -221,7 +221,7 @@ int main(int argc, char* argv[])
             }
 
             anim_config.allow_mixed = 1;
-            config.quality = 90;
+            config.quality = 95;
             config.lossless = 1;
             config.thread_level = 1;
 
@@ -305,10 +305,10 @@ int main(int argc, char* argv[])
 
         } else if (output.type == OutputType::GIF) {
             GifskiSettings settings;
-            settings.quality = 75;
+            settings.quality = 95;
             settings.fast = false;
-            settings.height = width;
-            settings.width = height;
+            settings.height = height;
+            settings.width = width;
             settings.repeat = 0;
 
             auto g = gifski_new(&settings);

@@ -18,10 +18,10 @@ func Run(gCtx global.Context) {
 		jobCount = runtime.GOMAXPROCS(0)
 	}
 
-	workers := make(chan *Worker, jobCount)
+	workers := make(chan Worker, jobCount)
 	blockers := make(chan struct{}, jobCount-1)
 	for i := 0; i < jobCount; i++ {
-		workers <- &Worker{}
+		workers <- Worker{}
 		if i != 0 {
 			blockers <- struct{}{}
 		}
