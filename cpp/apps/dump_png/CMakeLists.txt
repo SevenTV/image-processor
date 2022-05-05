@@ -4,14 +4,15 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 
 find_package(OpenCV REQUIRED)
 find_package(WebP REQUIRED)
+find_package(libavif REQUIRED)
 
-add_executable(webp_dump webp_dump.cpp)
+add_executable(dump_png dump_png.cpp)
 
 target_include_directories(
-  webp_dump
+  dump_png
   PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${WEBP_INCLUDE_DIR} ${OPENCV_INCLUDE_DIRS})
 
-target_link_libraries(webp_dump ${WEBP_LIBRARIES} ${OpenCV_LIBS})
+target_link_libraries(dump_png ${WEBP_LIBRARIES} ${OpenCV_LIBS} avif)
 
-install(TARGETS webp_dump)
+install(TARGETS dump_png)

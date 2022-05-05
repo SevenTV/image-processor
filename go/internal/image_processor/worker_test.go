@@ -17,7 +17,7 @@ import (
 )
 
 var assets = []string{
-	// "animated-1.avif",
+	"animated-1.avif",
 	"animated-1.gif",
 	"animated-1.png",
 	"animated-1.webp",
@@ -29,12 +29,12 @@ var assets = []string{
 	"animated.mov",
 	"animated.mp4",
 	"animated.webm",
-	// "static-1.avif",
+	"static-1.avif",
 	"static-1.jpeg",
 	"static-1.png",
 	"static-1.tiff",
 	"static-1.webp",
-	// "static-2.avif",
+	"static-2.avif",
 	"static-2.webp",
 }
 

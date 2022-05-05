@@ -90,15 +90,15 @@ func (Worker) Work(ctx global.Context, task Task, result *Result) error {
 
 	var delays []int
 	switch match {
-	case matchers.TypeWebp:
-		// we use webp_dump
+	case matchers.TypeWebp, container.TypeAvif:
+		// we use dump_png
 		out, err := exec.CommandContext(ctx,
-			"webp_dump",
+			"dump_png",
 			"-i", inputFile,
 			"-o", inputDir,
 		).CombinedOutput()
 		if err != nil {
-			return multierr.Append(err, fmt.Errorf("webp_dump failed: %s", out))
+			return multierr.Append(err, fmt.Errorf("dump_png failed: %s", out))
 		}
 
 		lines := strings.Split(utils.B2S(out), "\n")
@@ -108,7 +108,7 @@ func (Worker) Work(ctx global.Context, task Task, result *Result) error {
 				splits := strings.SplitN(line, ",", 2)
 				delay, err := strconv.Atoi(splits[1])
 				if err != nil {
-					return multierr.Append(err, fmt.Errorf("webp_dump failed: %s", out))
+					return multierr.Append(err, fmt.Errorf("dump_png failed: %s", out))
 				}
 				delays = append(delays, delay)
 			}
@@ -188,8 +188,6 @@ func (Worker) Work(ctx global.Context, task Task, result *Result) error {
 				}
 			}
 		}
-	case container.TypeAvif:
-		// we use avifdump
 	}
 
 	out, err := exec.CommandContext(ctx,
