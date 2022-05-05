@@ -29,7 +29,6 @@ _libwebp:
 	cd libwebp && \
 	((stat build && cd build && ninja) || (mkdir -p build && cd build && cmake .. \
 		-G Ninja \
-		-DWEBP_LINK_STATIC=OFF \
 		-DBUILD_SHARED_LIBS=ON && \
 	ninja)) && \
 	cd build && \
@@ -167,4 +166,4 @@ _ffmpeg:
 	(sudo make install || make install)
 
 clean:
-	rm -rf dav1d/build libavif/build libwebp/build gifski/target opencv/build rav1e/target ffmpeg/build
+	rm -rf dav1d/build libavif/build libwebp/build gifski/target opencv/build rav1e/target FFmpeg/build
