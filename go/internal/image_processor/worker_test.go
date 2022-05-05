@@ -39,6 +39,8 @@ var assets = []string{
 }
 
 func TestWorker(t *testing.T) {
+	t.Parallel()
+
 	var err error
 	gCtx, cancel := global.WithCancel(global.New(context.Background(), &configure.Config{}))
 

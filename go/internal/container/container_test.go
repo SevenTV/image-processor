@@ -29,6 +29,8 @@ func makeCase(t *testing.T, filename string, expected types.Type) testCase {
 }
 
 func TestMatch(t *testing.T) {
+	t.Parallel()
+
 	cases := []testCase{
 		makeCase(t, "animated-1.avif", TypeAvif),
 		makeCase(t, "animated-1.gif", matchers.TypeGif),
@@ -52,6 +54,11 @@ func TestMatch(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		testutil.Assert(t, c.ExpectedType, Match(c.Data), fmt.Sprintf("image %s", c.Filename))
+		c := c
+		t.Run(c.Filename, func(t *testing.T) {
+			t.Parallel()
+
+			testutil.Assert(t, c.ExpectedType, Match(c.Data), fmt.Sprintf("image %s", c.Filename))
+		})
 	}
 }

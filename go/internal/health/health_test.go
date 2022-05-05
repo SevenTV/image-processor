@@ -12,6 +12,8 @@ import (
 )
 
 func TestHealth(t *testing.T) {
+	t.Parallel()
+
 	config := &configure.Config{}
 	config.Health.Enabled = true
 	config.Health.Bind = "127.0.1.1:3000"
