@@ -34,7 +34,7 @@ dev_deps:
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@master # TODO fix this version, currently master to lint go1.18 files
 
 test:
-	go test -count=1 -cover ./...
+	go test -count=1 -cover -parallel $$(nproc) -race ./...
 
 clean:
 	rm -rf bin
