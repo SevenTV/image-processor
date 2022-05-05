@@ -61,4 +61,5 @@ type ResultOutput struct {
 	Height     int                    `json:"height"`
 	Key        string                 `json:"key"`
 	Bucket     string                 `json:"bucket"`
+	Size       int                    `json:"size"`
 }

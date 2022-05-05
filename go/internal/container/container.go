@@ -31,3 +31,9 @@ func Match(data []byte) types.Type {
 
 	return t
 }
+
+func MatchPath(path string) types.Type {
+	t, _ := filetype.MatchFile(path)
+
+	return t
+}

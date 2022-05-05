@@ -29,6 +29,8 @@ type TaskInput struct {
 }
 
 type TaskOutput struct {
-	Bucket string `json:"bucket"`
-	Prefix string `json:"prefix"`
+	Prefix       string `json:"prefix"`
+	ACL          string `json:"acl"`
+	Bucket       string `json:"bucket"`
+	CacheControl string `json:"cache_control"`
 }

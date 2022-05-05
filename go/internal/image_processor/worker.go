@@ -1,21 +1,26 @@
 package image_processor
 
 import (
+	"archive/zip"
 	"bytes"
 	"fmt"
 	"image/gif"
 	"io"
+	"io/fs"
 	"io/ioutil"
 	"math"
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/SevenTV/Common/utils"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/google/uuid"
 	"github.com/h2non/filetype/matchers"
 	"github.com/seventv/image-processor/go/internal/container"
@@ -86,7 +91,28 @@ func (Worker) Work(ctx global.Context, task Task, result *Result) error {
 	var delays []int
 	switch match {
 	case matchers.TypeWebp:
-		// we use webpdump
+		// we use webp_dump
+		out, err := exec.CommandContext(ctx,
+			"webp_dump",
+			"-i", inputFile,
+			"-o", inputDir,
+		).CombinedOutput()
+		if err != nil {
+			return multierr.Append(err, fmt.Errorf("webp_dump failed: %s", out))
+		}
+
+		lines := strings.Split(utils.B2S(out), "\n")
+		for _, line := range lines[2:] {
+			line = strings.TrimSpace(line)
+			if line != "" {
+				splits := strings.SplitN(line, ",", 2)
+				delay, err := strconv.Atoi(splits[1])
+				if err != nil {
+					return multierr.Append(err, fmt.Errorf("webp_dump failed: %s", out))
+				}
+				delays = append(delays, delay)
+			}
+		}
 	case matchers.TypeGif,
 		matchers.TypePng,
 		matchers.TypeMp4,
@@ -375,6 +401,121 @@ func (Worker) Work(ctx global.Context, task Task, result *Result) error {
 			}
 		}
 	}
+
+	if err = os.RemoveAll(inputDir); err != nil {
+		return err
+	}
+
+	if err = os.RemoveAll(inputFile); err != nil {
+		return err
+	}
+
+	zipFilePath := path.Join(tmpDir, "emote.zip")
+	zipFile, err := os.Create(zipFilePath)
+	if err != nil {
+		return err
+	}
+	w := zip.NewWriter(zipFile)
+
+	walker := func(pth string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			return nil
+		}
+
+		file, err := os.Open(pth)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+
+		f, err := w.Create(strings.TrimLeft(pth, tmpDir)[1:])
+		if err != nil {
+			return err
+		}
+
+		_, err = io.Copy(f, file)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+	err = filepath.Walk(resultsDir, walker)
+	if err != nil {
+		return multierr.Append(err, multierr.Append(w.Close(), zipFile.Close()))
+	}
+
+	err = filepath.Walk(variantsDir, walker)
+	if err != nil {
+		return multierr.Append(err, multierr.Append(w.Close(), zipFile.Close()))
+	}
+
+	err = multierr.Append(w.Close(), zipFile.Close())
+	if err != nil {
+		return err
+	}
+
+	wg := sync.WaitGroup{}
+	// we now need to upload all the files to s3
+	var (
+		uploadErr error
+		mtx       sync.Mutex
+	)
+	uploadPath := func(pth string) {
+		defer wg.Done()
+
+		f, err := os.Open(pth)
+		if err != nil {
+			mtx.Lock()
+			uploadErr = multierr.Append(err, uploadErr)
+			mtx.Unlock()
+			return
+		}
+		defer f.Close()
+
+		t := container.MatchPath(pth)
+
+		if err := ctx.Inst().S3.UploadFile(ctx, &s3manager.UploadInput{
+			Body:         f,
+			ACL:          aws.String(task.Output.ACL),
+			Bucket:       aws.String(task.Output.Bucket),
+			CacheControl: aws.String(task.Output.CacheControl),
+			ContentType:  aws.String(t.MIME.Value),
+			Key:          aws.String(path.Join(task.Output.Prefix, path.Base(pth))),
+		}); err != nil {
+			mtx.Lock()
+			uploadErr = multierr.Append(err, uploadErr)
+			mtx.Unlock()
+			return
+		}
+	}
+
+	err = filepath.Walk(resultsDir, func(pth string, info fs.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			return nil
+		}
+
+		wg.Add(1)
+		go uploadPath(pth)
+
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	wg.Add(1)
+	uploadPath(zipFilePath)
+
+	wg.Wait()
 
 	return ctx.Err()
 }
