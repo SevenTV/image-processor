@@ -17,8 +17,8 @@ import (
 	"github.com/seventv/image-processor/go/internal/health"
 	"github.com/seventv/image-processor/go/internal/image_processor"
 	"github.com/seventv/image-processor/go/internal/monitoring"
-	"github.com/seventv/image-processor/go/internal/svc/kubemq"
 	"github.com/seventv/image-processor/go/internal/svc/prometheus"
+	"github.com/seventv/image-processor/go/internal/svc/rmq"
 	"github.com/seventv/image-processor/go/internal/svc/s3"
 	"go.uber.org/zap"
 )
@@ -71,11 +71,8 @@ func main() {
 	gCtx, cancel := global.WithCancel(global.New(context.Background(), config))
 
 	{
-		gCtx.Inst().KubeMQ, err = kubemq.New(gCtx, kubemq.Options{
-			Host:      config.KubeMQ.Host,
-			Port:      config.KubeMQ.Port,
-			ClientId:  config.KubeMQ.ClientId,
-			AuthToken: config.KubeMQ.AuthToken,
+		gCtx.Inst().RMQ, err = rmq.New(gCtx, rmq.Options{
+			URI: config.RMQ.URI,
 		})
 		if err != nil {
 			zap.S().Fatalw("failed to setup kubemq handler",

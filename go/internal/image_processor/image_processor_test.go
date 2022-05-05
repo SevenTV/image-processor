@@ -6,15 +6,16 @@ import (
 	"path"
 	"runtime"
 	"testing"
+	"time"
 
-	kubemqgo "github.com/kubemq-io/kubemq-go"
 	"github.com/seventv/image-processor/go/internal/configure"
 	"github.com/seventv/image-processor/go/internal/global"
 	"github.com/seventv/image-processor/go/internal/instance"
-	"github.com/seventv/image-processor/go/internal/svc/kubemq"
 	"github.com/seventv/image-processor/go/internal/svc/prometheus"
+	"github.com/seventv/image-processor/go/internal/svc/rmq"
 	"github.com/seventv/image-processor/go/internal/svc/s3"
 	"github.com/seventv/image-processor/go/internal/testutil"
+	"github.com/streadway/amqp"
 )
 
 func TestRun(t *testing.T) {
@@ -24,7 +25,7 @@ func TestRun(t *testing.T) {
 	gCtx, cancel := global.WithCancel(global.New(context.Background(), &configure.Config{}))
 	defer cancel()
 
-	gCtx.Inst().KubeMQ, err = kubemq.NewMock(gCtx)
+	gCtx.Inst().RMQ, err = rmq.NewMock()
 	testutil.IsNil(t, err, "kubemq init successful")
 
 	gCtx.Inst().Prometheus = prometheus.New(prometheus.Options{})
@@ -43,6 +44,7 @@ func TestRun(t *testing.T) {
 	Run(gCtx)
 
 	const TaskID = "batchest-test-123"
+	const CallbackEvent = "image-processor-results"
 
 	task, err := json.Marshal(Task{
 		ID:    TaskID,
@@ -61,30 +63,33 @@ func TestRun(t *testing.T) {
 	})
 	testutil.IsNil(t, err, "task marshals")
 
-	_, err = gCtx.Inst().KubeMQ.Send(gCtx, kubemqgo.NewQueueMessage().
-		SetChannel("image-processor-jobs").
-		SetBody(task),
-	)
+	err = gCtx.Inst().RMQ.Publish(instance.RmqPublishRequest{
+		RoutingKey: "image-processor-jobs",
+		Immediate:  true,
+		Mandatory:  true,
+		Publishing: amqp.Publishing{
+			ContentType:  "application/json",
+			ReplyTo:      CallbackEvent,
+			DeliveryMode: amqp.Persistent,
+			Timestamp:    time.Now(),
+			Body:         task,
+		},
+	})
 	testutil.IsNil(t, err, "We send a queue message")
 
-	done := make(chan struct{})
-	err = gCtx.Inst().KubeMQ.Subscribe(
-		gCtx,
-		"image-processor-results",
-		func(response instance.QueueTransactionMessageResponse, err error) {
-			defer close(done)
-
-			result := Result{}
-			testutil.IsNil(t, json.Unmarshal(response.Msg().Body, &result), "The response is a result")
-
-			testutil.Assert(t, TaskID, result.ID, "The result is for the task we sent")
-
-			testutil.Assert(t, "", result.Message, "No message was returned")
-
-			testutil.Assert(t, ResultStateSuccess, result.State, "The job processed successfully")
-		},
-	)
+	ch, err := gCtx.Inst().RMQ.Subscribe(gCtx, instance.RmqSubscribeRequest{
+		Queue: CallbackEvent,
+	})
 	testutil.IsNil(t, err, "We can subscribe to a channel")
 
-	<-done
+	msg := <-ch
+
+	result := Result{}
+	testutil.IsNil(t, json.Unmarshal(msg.Body, &result), "The response is a result")
+
+	testutil.Assert(t, TaskID, result.ID, "The result is for the task we sent")
+
+	testutil.Assert(t, "", result.Message, "No message was returned")
+
+	testutil.Assert(t, ResultStateSuccess, result.State, "The job processed successfully")
 }

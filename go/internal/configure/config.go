@@ -100,12 +100,9 @@ type Config struct {
 		Enabled bool   `mapstructure:"enabled" json:"enabled"`
 	} `mapstructure:"health" json:"health"`
 
-	KubeMQ struct {
-		Host      string `mapstructure:"host" json:"host"`
-		Port      int    `mapstructure:"port" json:"port"`
-		ClientId  string `mapstructure:"client_id" json:"client_id"`
-		AuthToken string `mapstructure:"auth_token" json:"auth_token"`
-	} `mapstructure:"kubemq" json:"kubemq"`
+	RMQ struct {
+		URI string `mapstructure:"uri" json:"uri"`
+	} `mapstructure:"rmq" json:"rmq"`
 
 	S3 struct {
 		Region      string `mapstructure:"region" json:"region"`

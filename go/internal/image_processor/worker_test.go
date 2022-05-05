@@ -10,8 +10,8 @@ import (
 
 	"github.com/seventv/image-processor/go/internal/configure"
 	"github.com/seventv/image-processor/go/internal/global"
-	"github.com/seventv/image-processor/go/internal/svc/kubemq"
 	"github.com/seventv/image-processor/go/internal/svc/prometheus"
+	"github.com/seventv/image-processor/go/internal/svc/rmq"
 	"github.com/seventv/image-processor/go/internal/svc/s3"
 	"github.com/seventv/image-processor/go/internal/testutil"
 )
@@ -44,7 +44,7 @@ func TestWorker(t *testing.T) {
 	var err error
 	gCtx, cancel := global.WithCancel(global.New(context.Background(), &configure.Config{}))
 
-	gCtx.Inst().KubeMQ, err = kubemq.NewMock(gCtx)
+	gCtx.Inst().RMQ, err = rmq.NewMock()
 	testutil.IsNil(t, err, "kubemq init successful")
 	gCtx.Inst().Prometheus = prometheus.New(prometheus.Options{})
 
