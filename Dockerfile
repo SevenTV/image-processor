@@ -167,20 +167,16 @@ FROM deps as go-builder
     ARG BUILDER
     ARG VERSION
 
-    ENV IMAGES_BUILDER=${BUILDER}
-    ENV IMAGES_VERSION=${VERSION}
-
-    RUN make
-
     COPY assets /tmp/assets
 
     COPY --from=cpp-builder /usr/local /usr/local
 
-    RUN ldconfig && make test && \
-        apt-get remove -y build-essential && \
-        apt-get autoremove -y && \
-        apt-get clean -y && \
-        rm -rf /var/cache/apt/archives /var/lib/apt/lists/*
+    RUN ldconfig && make test
+
+    ENV IMAGES_BUILDER=${BUILDER}
+    ENV IMAGES_VERSION=${VERSION}
+
+    RUN make
 
 #
 # final squashed image
