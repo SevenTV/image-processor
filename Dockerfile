@@ -190,3 +190,5 @@ FROM deps as final
 
     COPY --from=cpp-builder /tmp/build/out /usr/local/bin
     COPY --from=go-builder /tmp/build/out .
+
+    CMD ./image_processor
