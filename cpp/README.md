@@ -11,7 +11,8 @@ sudo apt-get update
 Install all these packages used for building.
 
 ```
-sudo apt-get install ca-certificates \
+sudo apt-get install \
+    ca-certificates \
     build-essential \
     curl \
     ninja-build \
@@ -20,10 +21,15 @@ sudo apt-get install ca-certificates \
     nasm \
     openssl \
     pkg-config \
-    libssl-dev \
     cmake \
+    libssl-dev \
     libpng-dev \
-    zlib1g-dev
+    zlib1g-dev \
+    libx264-dev \
+    libx265-dev \
+    libvpx-dev \
+    libopenjp2-7-dev \
+    libssl-dev
 ```
 
 You will also need the rust compiler
