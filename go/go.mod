@@ -15,6 +15,7 @@ require (
 	github.com/valyala/fasthttp v1.36.0
 	go.uber.org/multierr v1.8.0
 	go.uber.org/zap v1.21.0
+	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4
 )
 
 require (

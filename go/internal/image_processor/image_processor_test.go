@@ -55,7 +55,7 @@ func TestRun(t *testing.T) {
 		},
 		Output: TaskOutput{
 			Bucket: "output",
-			Prefix: "",
+			Prefix: "output",
 		},
 		SmallestMaxWidth:  96,
 		SmallestMaxHeight: 32,

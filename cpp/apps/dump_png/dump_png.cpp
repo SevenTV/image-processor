@@ -26,6 +26,8 @@ void syntax()
               << std::endl
               << "  -o,--output FOLDER          : Output folder"
               << std::endl
+              << "  --info                            : Only output info dont dump the images"
+              << std::endl
               << std::endl;
 }
 
@@ -74,7 +76,7 @@ int main(int argc, char* argv[])
     std::string input;
     std::string output;
 
-    bool isAvif, isWebp;
+    bool isAvif, isWebp, onlyInfo;
 
     int argIndex = 1;
     while (argIndex < argc) {
@@ -87,6 +89,8 @@ int main(int argc, char* argv[])
             NEXTARG();
 
             output = arg;
+        } else if (arg == "--info") {
+            onlyInfo = true;
         } else if (arg == "--input" || arg == "-i") {
             NEXTARG();
             isWebp = std::filesystem::path(arg).extension() == ".webp";
@@ -108,7 +112,7 @@ int main(int argc, char* argv[])
         argIndex++;
     }
 
-    if (!input.size() || !output.size()) {
+    if (!input.size() || (!output.size() && !onlyInfo)) {
         syntax();
         return EXIT_FAILURE;
     }
@@ -137,8 +141,9 @@ int main(int argc, char* argv[])
         }
 
         cv::Mat frame(animInfo.canvas_height, animInfo.canvas_width, CV_8UC4);
-        std::cout << "frame_count: " << animInfo.frame_count << " width: " << animInfo.canvas_width << " height: " << animInfo.canvas_height << std::endl;
-        std::cout << "idx,delay" << std::endl;
+        std::cout << "width,height,frame_count" << std::endl
+                  << animInfo.canvas_width << "," << animInfo.canvas_height << "," << animInfo.frame_count << std::endl;
+        std::cout << "frame_idx,delay" << std::endl;
         while (WebPAnimDecoderHasMoreFrames(dec)) {
             int timestamp;
 
@@ -155,12 +160,14 @@ int main(int argc, char* argv[])
             auto duration = timestamp - prevFrameTimestamp;
             std::cout << frameIndex << "," << duration / 10 << std::endl;
 
-            sprintf(buffer, "%04d.png", frameIndex);
+            if (!onlyInfo) {
+                sprintf(buffer, "%04d.png", frameIndex);
 
-            auto filename = std::filesystem::path(output) / buffer;
+                auto filename = std::filesystem::path(output) / buffer;
 
-            cv::cvtColor(frame, frame, cv::COLOR_RGBA2BGRA);
-            cv::imwrite(filename, frame);
+                cv::cvtColor(frame, frame, cv::COLOR_RGBA2BGRA);
+                cv::imwrite(filename, frame);
+            }
 
             ++frameIndex;
             prevFrameTimestamp = timestamp;
@@ -186,8 +193,9 @@ int main(int argc, char* argv[])
             return EXIT_FAILURE;
         }
 
-        std::cout << "frame_count: " << decoder->imageCount << " width: " << decoder->image->width << " height: " << decoder->image->height << std::endl;
-        std::cout << "idx,delay" << std::endl;
+        std::cout << "width,height,frame_count" << std::endl
+                  << decoder->image->width << "," << decoder->image->height << "," << decoder->imageCount << std::endl;
+        std::cout << "frame_idx,delay" << std::endl;
 
         cv::Mat frame(decoder->image->height, decoder->image->width, CV_8UC4);
 
@@ -203,11 +211,13 @@ int main(int argc, char* argv[])
 
             std::cout << frameIndex << "," << decoder->imageTiming.duration * 1000 << std::endl;
 
-            sprintf(buffer, "%04d.png", frameIndex);
-            auto filename = std::filesystem::path(output) / buffer;
+            if (!onlyInfo) {
+                sprintf(buffer, "%04d.png", frameIndex);
+                auto filename = std::filesystem::path(output) / buffer;
 
-            cv::cvtColor(frame, frame, cv::COLOR_RGBA2BGRA);
-            cv::imwrite(filename, frame);
+                cv::cvtColor(frame, frame, cv::COLOR_RGBA2BGRA);
+                cv::imwrite(filename, frame);
+            }
 
             frameIndex++;
         }

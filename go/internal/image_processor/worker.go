@@ -3,6 +3,7 @@ package image_processor
 import (
 	"archive/zip"
 	"bytes"
+	"encoding/hex"
 	"fmt"
 	"image/gif"
 	"io"
@@ -26,11 +27,16 @@ import (
 	"github.com/seventv/image-processor/go/internal/container"
 	"github.com/seventv/image-processor/go/internal/global"
 	"go.uber.org/multierr"
+	"golang.org/x/crypto/sha3"
 )
 
 type Worker struct{}
 
 func (Worker) Work(ctx global.Context, task Task, result *Result) error {
+	if result == nil {
+		return fmt.Errorf("nil for result")
+	}
+
 	id := uuid.New().String()
 	tmpDir := path.Join(ctx.Config().Worker.TempDir, id)
 	if err := os.MkdirAll(tmpDir, 0700); err != nil {
@@ -82,6 +88,14 @@ func (Worker) Work(ctx global.Context, task Task, result *Result) error {
 		return err
 	}
 
+	h := sha3.New512()
+	_, err = h.Write(buf.Bytes())
+	if err != nil {
+		return err
+	}
+
+	result.InputSHA3 = hex.EncodeToString(h.Sum(nil))
+
 	inputDir := path.Join(tmpDir, "input")
 	err = os.MkdirAll(inputDir, 0700)
 	if err != nil {
@@ -102,7 +116,7 @@ func (Worker) Work(ctx global.Context, task Task, result *Result) error {
 		}
 
 		lines := strings.Split(utils.B2S(out), "\n")
-		for _, line := range lines[2:] {
+		for _, line := range lines[3:] {
 			line = strings.TrimSpace(line)
 			if line != "" {
 				splits := strings.SplitN(line, ",", 2)
@@ -466,24 +480,161 @@ func (Worker) Work(ctx global.Context, task Task, result *Result) error {
 	uploadPath := func(pth string) {
 		defer wg.Done()
 
-		f, err := os.Open(pth)
+		h := sha3.New512()
+		data, err := os.ReadFile(pth)
 		if err != nil {
 			mtx.Lock()
 			uploadErr = multierr.Append(err, uploadErr)
 			mtx.Unlock()
 			return
 		}
-		defer f.Close()
+		_, err = h.Write(data)
+		if err != nil {
+			mtx.Lock()
+			uploadErr = multierr.Append(err, uploadErr)
+			mtx.Unlock()
+			return
+		}
 
-		t := container.MatchPath(pth)
+		sha3 := hex.EncodeToString(h.Sum(nil))
+
+		t := container.Match(data)
+		key := path.Join(task.Output.Prefix, path.Base(pth))
+		if t == matchers.TypeZip {
+			result.ZipOutput = ResultZipOutput{
+				Name:         path.Base(pth),
+				Size:         len(data),
+				Key:          key,
+				Bucket:       task.Output.Bucket,
+				ACL:          task.Output.ACL,
+				CacheControl: task.Output.CacheControl,
+				SHA3:         sha3,
+			}
+		} else {
+			var format ResultOutputFormatType
+			switch t {
+			case matchers.TypeGif:
+				format = ResultOutputFormatTypeGIF
+			case matchers.TypePng:
+				format = ResultOutputFormatTypePNG
+			case matchers.TypeWebp:
+				format = ResultOutputFormatTypeWEBP
+			case container.TypeAvif:
+				format = ResultOutputFormatTypeAVIF
+			}
+
+			var (
+				width      int
+				height     int
+				frameCount int
+			)
+			switch t {
+			case matchers.TypeGif, matchers.TypePng:
+				// ffprobe -v error -select_streams v:0 -count_packets -show_entries stream=width,height,nb_read_packets -of csv=p=0 assets/animated-1.gif
+				output, err := exec.CommandContext(ctx,
+					"ffprobe",
+					"-v", "error",
+					"-select_streams", "v:0",
+					"-count_packets",
+					"-show_entries", "stream=width,height,nb_read_packets",
+					"-of", "csv=p=0",
+					pth,
+				).CombinedOutput()
+				if err != nil {
+					mtx.Lock()
+					uploadErr = multierr.Append(multierr.Append(err, fmt.Errorf("ffprobe failed: %s", output)), uploadErr)
+					mtx.Unlock()
+					return
+				}
+
+				splits := strings.SplitN(strings.TrimSpace(utils.B2S(output)), ",", 3)
+				width, err = strconv.Atoi(splits[0])
+				if err != nil {
+					mtx.Lock()
+					uploadErr = multierr.Append(multierr.Append(err, fmt.Errorf("ffprobe failed: %s", output)), uploadErr)
+					mtx.Unlock()
+					return
+				}
+				height, err = strconv.Atoi(splits[1])
+				if err != nil {
+					mtx.Lock()
+					uploadErr = multierr.Append(multierr.Append(err, fmt.Errorf("ffprobe failed: %s", output)), uploadErr)
+					mtx.Unlock()
+					return
+				}
+				frameCount, err = strconv.Atoi(splits[2])
+				if err != nil {
+					mtx.Lock()
+					uploadErr = multierr.Append(multierr.Append(err, fmt.Errorf("ffprobe failed: %s", output)), uploadErr)
+					mtx.Unlock()
+					return
+				}
+			case matchers.TypeWebp, container.TypeAvif:
+				// we need to do
+				output, err := exec.CommandContext(ctx,
+					"dump_png",
+					"--info",
+					"-i", pth,
+					pth,
+				).CombinedOutput()
+				if err != nil {
+					mtx.Lock()
+					uploadErr = multierr.Append(multierr.Append(err, fmt.Errorf("dump_png failed: %s", output)), uploadErr)
+					mtx.Unlock()
+					return
+				}
+
+				lines := strings.Split(strings.TrimSpace(utils.B2S(output)), "\n")
+
+				splits := strings.SplitN(lines[1], ",", 3)
+				width, err = strconv.Atoi(splits[0])
+				if err != nil {
+					mtx.Lock()
+					uploadErr = multierr.Append(multierr.Append(err, fmt.Errorf("dump_png failed: %s", output)), uploadErr)
+					mtx.Unlock()
+					return
+				}
+				height, err = strconv.Atoi(splits[1])
+				if err != nil {
+					mtx.Lock()
+					uploadErr = multierr.Append(multierr.Append(err, fmt.Errorf("dump_png failed: %s", output)), uploadErr)
+					mtx.Unlock()
+					return
+				}
+				frameCount, err = strconv.Atoi(splits[2])
+				if err != nil {
+					mtx.Lock()
+					uploadErr = multierr.Append(multierr.Append(err, fmt.Errorf("dump_png failed: %s", output)), uploadErr)
+					mtx.Unlock()
+					return
+				}
+			}
+
+			mtx.Lock()
+			result.ImageOutputs = append(result.ImageOutputs, ResultImageOutput{
+				Name:         path.Base(pth),
+				Format:       format,
+				FrameCount:   frameCount,
+				Width:        width,
+				Height:       height,
+				Key:          key,
+				Bucket:       task.Output.Bucket,
+				Size:         len(data),
+				ContentType:  t.MIME.Value,
+				ACL:          task.Output.ACL,
+				CacheControl: task.Output.CacheControl,
+				SHA3:         sha3,
+			})
+			mtx.Unlock()
+		}
 
 		if err := ctx.Inst().S3.UploadFile(ctx, &s3manager.UploadInput{
-			Body:         f,
+			Body:         bytes.NewReader(data),
 			ACL:          aws.String(task.Output.ACL),
 			Bucket:       aws.String(task.Output.Bucket),
 			CacheControl: aws.String(task.Output.CacheControl),
 			ContentType:  aws.String(t.MIME.Value),
-			Key:          aws.String(path.Join(task.Output.Prefix, path.Base(pth))),
+			Key:          aws.String(key),
 		}); err != nil {
 			mtx.Lock()
 			uploadErr = multierr.Append(err, uploadErr)
