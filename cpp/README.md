@@ -29,7 +29,9 @@ sudo apt-get install \
     libx265-dev \
     libvpx-dev \
     libopenjp2-7-dev \
-    libssl-dev
+    libssl-dev \
+    gifsicle \
+    optipng
 ```
 
 You will also need the rust compiler
