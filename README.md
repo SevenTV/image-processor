@@ -1,6 +1,6 @@
 # ImageProcessor
 
-## 1. For building and compiling this application
+## For building and compiling this application
 
 You can checkout he respective READMEs
 
