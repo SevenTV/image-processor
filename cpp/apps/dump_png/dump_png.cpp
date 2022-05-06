@@ -26,7 +26,7 @@ void syntax()
               << std::endl
               << "  -o,--output FOLDER          : Output folder"
               << std::endl
-              << "  --info                            : Only output info dont dump the images"
+              << "  --info                      : Only output info dont dump the images"
               << std::endl
               << std::endl;
 }

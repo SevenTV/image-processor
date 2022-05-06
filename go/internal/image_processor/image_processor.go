@@ -29,99 +29,140 @@ func Run(gCtx global.Context) {
 
 	go func() {
 		first := true
-		for {
+		for gCtx.Err() == nil {
 			if !first {
 				time.Sleep(time.Second * 5)
 			} else {
 				first = false
 			}
 
-			ch, err := gCtx.Inst().RMQ.Subscribe(gCtx, instance.RmqSubscribeRequest{
-				Queue: gCtx.Config().RMQ.JobsQueue,
-			})
-			if err != nil {
-				zap.S().Fatalw("failed to start image processor",
-					"error", err,
-				)
-				return
-			}
-			for {
-				select {
-				case <-gCtx.Done():
-					return
-				case msg := <-ch:
-					zap.S().Infow("new message",
-						"id", msg.MessageId,
-					)
-
-					t := Task{}
-					if err := json.Unmarshal(msg.Body, &t); err != nil {
-						zap.S().Warnw("bad task payload",
-							"error", multierr.Append(err, msg.Ack(false)),
-						)
-						return
-					}
-
-					worker := <-workers
-
-					ctx, cancel := global.WithCancel(gCtx)
-					go func() {
-						defer func() {
-							cancel()
-							blockers <- struct{}{}
-						}()
-						result := Result{
-							ID:    t.ID,
-							State: ResultStateFailed,
-						}
-
-						err := worker.Work(ctx, t, &result)
-						if err != nil {
-							err = multierr.Append(err, msg.Reject(false))
-							zap.S().Errorw("task processing failed",
-								"error", err,
-							)
-						} else if err = msg.Ack(false); err != nil {
-							zap.S().Errorw("failed to ack task",
-								"error", err,
-							)
-						} else {
-							result.State = ResultStateSuccess
-						}
-
-						if err != nil {
-							result.Message = err.Error()
-						}
-
-						if msg.ReplyTo != "" {
-							resultData, err := json.Marshal(result)
-							if err != nil {
-								zap.S().Errorw("failed to marshal result",
-									"error", err,
-								)
-							} else {
-								if err := gCtx.Inst().RMQ.Publish(instance.RmqPublishRequest{
-									RoutingKey: msg.ReplyTo,
-									Publishing: amqp.Publishing{
-										ContentType:  "application/json",
-										DeliveryMode: amqp.Persistent,
-										Body:         resultData,
-										Timestamp:    time.Now(),
-									},
-								}); err != nil {
-									zap.S().Errorw("failed to publish result",
-										"error", err,
-									)
-								}
-							}
-						}
-					}()
-
-					<-blockers
-				}
-			}
+			retryProcess(gCtx, workers, blockers)
 		}
 	}()
 
 	zap.S().Infof("Starting job worker with %d jobs", jobCount)
+}
+
+func retryProcess(gCtx global.Context, workers chan Worker, blockers chan struct{}) {
+	defer func() {
+		if err := recover(); err != nil {
+			zap.S().Errorw("panic in process",
+				"panic", err,
+			)
+		}
+	}()
+
+	ch, err := gCtx.Inst().RMQ.Subscribe(gCtx, instance.RmqSubscribeRequest{
+		Queue: gCtx.Config().RMQ.JobsQueue,
+	})
+	if err != nil {
+		zap.S().Fatalw("failed to start image processor",
+			"error", err,
+		)
+		return
+	}
+	for gCtx.Err() == nil {
+		process(gCtx, ch, workers, blockers)
+	}
+}
+
+func process(gCtx global.Context, ch <-chan amqp.Delivery, workers chan Worker, blockers chan struct{}) {
+	defer func() {
+		if err := recover(); err != nil {
+			zap.S().Errorw("panic in process",
+				"panic", err,
+			)
+		}
+	}()
+
+	select {
+	case <-gCtx.Done():
+		return
+	case msg := <-ch:
+		t := Task{}
+		if err := json.Unmarshal(msg.Body, &t); err != nil {
+			zap.S().Warnw("bad task payload",
+				"error", multierr.Append(err, msg.Ack(false)),
+			)
+			return
+		}
+
+		zap.S().Infow("new message",
+			"id", t.ID,
+			"msg_id", msg.MessageId,
+		)
+
+		worker := <-workers
+
+		ctx, cancel := global.WithCancel(gCtx)
+		result := Result{
+			ID:    t.ID,
+			State: ResultStateFailed,
+		}
+
+		go func() {
+			defer func() {
+				if err := recover(); err != nil {
+					zap.S().Errorw("panic in process",
+						"panic", err,
+					)
+				}
+
+				cancel()
+				blockers <- struct{}{}
+				workers <- worker
+
+				zap.S().Infow("finished",
+					"id", t.ID,
+					"msg_id", msg.MessageId,
+					"run_duration", result.FinishedAt.Sub(result.StartedAt),
+					"state", result.State,
+					"message", result.Message,
+				)
+			}()
+
+			err := worker.Work(ctx, t, &result)
+			if err != nil {
+				err = multierr.Append(err, msg.Reject(false))
+				zap.S().Errorw("task processing failed",
+					"error", err,
+				)
+			} else if err = msg.Ack(false); err != nil {
+				zap.S().Errorw("failed to ack task",
+					"error", err,
+				)
+			} else {
+				result.State = ResultStateSuccess
+			}
+
+			if err != nil {
+				result.Message = err.Error()
+			}
+
+			if msg.ReplyTo != "" {
+				resultData, err := json.Marshal(result)
+				if err != nil {
+					zap.S().Errorw("failed to marshal result",
+						"error", err,
+					)
+				} else {
+					if err := gCtx.Inst().RMQ.Publish(instance.RmqPublishRequest{
+						RoutingKey: msg.ReplyTo,
+						Publishing: amqp.Publishing{
+							ContentType:  "application/json",
+							DeliveryMode: amqp.Persistent,
+							Body:         resultData,
+							Timestamp:    time.Now(),
+						},
+					}); err != nil {
+						zap.S().Errorw("failed to publish result",
+							"error", err,
+						)
+					}
+				}
+			}
+		}()
+
+		<-blockers
+	}
 }

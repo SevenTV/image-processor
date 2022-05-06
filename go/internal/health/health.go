@@ -11,6 +11,14 @@ func New(gCtx global.Context) <-chan struct{} {
 
 	srv := fasthttp.Server{
 		Handler: func(ctx *fasthttp.RequestCtx) {
+			defer func() {
+				if err := recover(); err != nil {
+					zap.S().Errorw("panic in health",
+						"panic", err,
+					)
+				}
+			}()
+
 			ctx.SetStatusCode(200)
 		},
 	}

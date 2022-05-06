@@ -1,6 +1,9 @@
 package image_processor
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 type ResultState int32
 
@@ -23,6 +26,8 @@ func (r ResultState) String() string {
 
 type Result struct {
 	ID           string              `json:"id"`
+	StartedAt    time.Time           `json:"started_at"`
+	FinishedAt   time.Time           `json:"finished_at"`
 	State        ResultState         `json:"state"`
 	Message      string              `json:"message"`
 	InputSHA3    string              `json:"input_sha3"`
