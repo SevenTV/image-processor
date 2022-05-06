@@ -147,7 +147,7 @@ jobs:
           endpoint: builders
 
       - name: Build docker image
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           context: .
           cache-from: |
