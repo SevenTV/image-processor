@@ -37,7 +37,7 @@ func Run(gCtx global.Context) {
 			}
 
 			ch, err := gCtx.Inst().RMQ.Subscribe(gCtx, instance.RmqSubscribeRequest{
-				Queue: "image-processor-jobs",
+				Queue: gCtx.Config().RMQ.JobsQueue,
 			})
 			if err != nil {
 				zap.S().Fatalw("failed to start image processor",

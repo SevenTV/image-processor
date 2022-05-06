@@ -22,7 +22,14 @@ func TestRun(t *testing.T) {
 	t.Parallel()
 
 	var err error
-	gCtx, cancel := global.WithCancel(global.New(context.Background(), &configure.Config{}))
+	gCtx, cancel := global.WithCancel(global.New(context.Background(), &configure.Config{
+		RMQ: struct {
+			URI       string "mapstructure:\"uri\" json:\"uri\""
+			JobsQueue string "mapstructure:\"jobs_queue\" json:\"jobs_queue\""
+		}{
+			JobsQueue: "image-processor-jobs",
+		},
+	}))
 	defer cancel()
 
 	gCtx.Inst().RMQ, err = rmq.NewMock()

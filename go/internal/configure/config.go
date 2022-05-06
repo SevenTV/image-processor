@@ -101,7 +101,8 @@ type Config struct {
 	} `mapstructure:"health" json:"health"`
 
 	RMQ struct {
-		URI string `mapstructure:"uri" json:"uri"`
+		URI       string `mapstructure:"uri" json:"uri"`
+		JobsQueue string `mapstructure:"jobs_queue" json:"jobs_queue"`
 	} `mapstructure:"rmq" json:"rmq"`
 
 	S3 struct {
