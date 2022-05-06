@@ -194,7 +194,7 @@ jobs:
           endpoint: builders
 
       - name: Download artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: docker-image
 
