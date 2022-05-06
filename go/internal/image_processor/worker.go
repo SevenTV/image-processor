@@ -581,13 +581,13 @@ func (Worker) resizeFrames(ctx global.Context, inputDir string, tmpDir string, t
 	}
 	height, err := strconv.Atoi(widthHeight[1])
 	if err != nil {
-		return "", multierr.Append(fmt.Errorf("failed at parse height"), multierr.Append(err, fmt.Errorf("convert_png failed: %s", out)))
+		return "", multierr.Append(fmt.Errorf("failed at parse height"), multierr.Append(err, fmt.Errorf("ffprobe failed: %s", out)))
 	}
 
 	variantsDir = path.Join(tmpDir, "variants")
 	err = os.MkdirAll(variantsDir, 0700)
 	if err != nil {
-		return "", multierr.Append(fmt.Errorf("failed at mkdir variantsDir"), multierr.Append(err, fmt.Errorf("convert_png failed: %s", out)))
+		return "", multierr.Append(fmt.Errorf("failed at mkdir variantsDir"), err)
 	}
 
 	smwf := float64(task.SmallestMaxWidth)
@@ -652,7 +652,7 @@ func (Worker) exportFrames(ctx global.Context, tmpDir string, inputFile string, 
 	inputDir = path.Join(tmpDir, "input")
 	err = os.MkdirAll(inputDir, 0700)
 	if err != nil {
-		return nil, "", err
+		return nil, "", multierr.Append(fmt.Errorf("failed at mkdir inputDir"), err)
 	}
 
 	switch match {
