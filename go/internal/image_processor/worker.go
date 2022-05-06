@@ -575,7 +575,6 @@ func (Worker) Work(ctx global.Context, task Task, result *Result) error {
 					"dump_png",
 					"--info",
 					"-i", pth,
-					pth,
 				).CombinedOutput()
 				if err != nil {
 					mtx.Lock()
@@ -665,6 +664,10 @@ func (Worker) Work(ctx global.Context, task Task, result *Result) error {
 	uploadPath(zipFilePath)
 
 	wg.Wait()
+
+	if uploadErr != nil {
+		return uploadErr
+	}
 
 	return ctx.Err()
 }

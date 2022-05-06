@@ -209,7 +209,7 @@ int main(int argc, char* argv[])
                 return EXIT_FAILURE;
             }
 
-            std::cout << frameIndex << "," << decoder->imageTiming.duration * 1000 << std::endl;
+            std::cout << frameIndex << "," << decoder->imageTiming.duration * 100 << std::endl;
 
             if (!onlyInfo) {
                 sprintf(buffer, "%04d.png", frameIndex);
