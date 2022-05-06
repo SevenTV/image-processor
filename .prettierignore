@@ -1,0 +1,6 @@
+cpp/build
+cpp/out
+cpp/third-party/**/*
+node_modules/
+assets/
+Dockerfile

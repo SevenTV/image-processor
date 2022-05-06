@@ -1,0 +1,21 @@
+[submodule "cpp/third-party/opencv"]
+	path = cpp/third-party/opencv
+	url = https://github.com/opencv/opencv.git
+[submodule "cpp/third-party/gifski"]
+	path = cpp/third-party/gifski
+	url = https://github.com/ImageOptim/gifski
+[submodule "cpp/third-party/libavif"]
+	path = cpp/third-party/libavif
+	url = https://github.com/AOMediaCodec/libavif
+[submodule "cpp/third-party/libwebp"]
+	path = cpp/third-party/libwebp
+	url = https://github.com/webmproject/libwebp
+[submodule "cpp/third-party/dav1d"]
+	path = cpp/third-party/dav1d
+	url = https://code.videolan.org/videolan/dav1d.git
+[submodule "cpp/third-party/rav1e"]
+	path = cpp/third-party/rav1e
+	url = https://github.com/xiph/rav1e.git
+[submodule "cpp/third-party/FFmpeg"]
+	path = cpp/third-party/FFmpeg
+	url = https://github.com/FFmpeg/FFmpeg.git
