@@ -189,27 +189,8 @@ jobs:
       - name: Install kubectl
         uses: azure/setup-kubectl@v2.1
 
-      - name: Setup docker trust env
-        env:
-          DOCKER_TRUST_PRIVATE_KEY: ${{ secrets.DOCKER_TRUST_PRIVATE_KEY }}
-          DOCKER_TRUST_PUBLIC_KEY: ${{ secrets.DOCKER_TRUST_PUBLIC_KEY }}
-          DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE: ${{ secrets.DOCKER_TRUST_REPOSITORY_PASSPHRASE }}
-          DOCKER_CONTENT_TRUST_ROOT_PASSPHRASE: ${{ secrets.DOCKER_TRUST_ROOT_PASSPHRASE }}
-          DOCKER_CONTENT_TRUST: "1"
-          DOCKER_CONTENT_TRUST_SERVER: https://harbor.disembark.dev/notary
-        run: |
-          mkdir -p ~/.trust
-          (echo $DOCKER_TRUST_PRIVATE_KEY | base64 -d) >> ~/.trust/githubci.key
-          (echo $DOCKER_TRUST_PUBLIC_KEY | base64 -d) >> ~/.trust/githubci.pub
-          docker trust key load ~/.trust/githubci.key --name githubci
-
       - name: "[Production] Tag & Push docker images"
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.deploy == 'production') || (github.event_name == 'push' && github.ref_type == 'branch' && github.ref_name == 'master') }}
-        env:
-          DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE: ${{ secrets.DOCKER_TRUST_REPOSITORY_PASSPHRASE }}
-          DOCKER_CONTENT_TRUST_ROOT_PASSPHRASE: ${{ secrets.DOCKER_TRUST_ROOT_PASSPHRASE }}
-          DOCKER_CONTENT_TRUST: "1"
-          DOCKER_CONTENT_TRUST_SERVER: https://harbor.disembark.dev/notary
         run: |
           docker tag image-processor:${{ github.sha }} harbor.disembark.dev/7tv/image-processor:latest
           docker tag image-processor:${{ github.sha }} harbor.disembark.dev/7tv/image-processor:${{ github.sha }}
@@ -218,11 +199,6 @@ jobs:
 
       - name: "[Staging] Tag & Push docker images"
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.deploy == 'staging') || (github.event_name == 'push' && github.ref_type == 'branch' && github.ref_name == 'dev') }}
-        env:
-          DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE: ${{ secrets.DOCKER_TRUST_REPOSITORY_PASSPHRASE }}
-          DOCKER_CONTENT_TRUST_ROOT_PASSPHRASE: ${{ secrets.DOCKER_TRUST_ROOT_PASSPHRASE }}
-          DOCKER_CONTENT_TRUST: "1"
-          DOCKER_CONTENT_TRUST_SERVER: https://harbor.disembark.dev/notary
         run: |
           docker tag image-processor:${{ github.sha }} harbor.disembark.dev/7tv-stage/image-processor:latest
           docker tag image-processor:${{ github.sha }} harbor.disembark.dev/7tv-stage/image-processor:${{ github.sha }}
