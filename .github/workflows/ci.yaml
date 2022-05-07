@@ -153,9 +153,9 @@ jobs:
       - build
       - lint
     env:
-      DEPLOY_PROD: ${{ (github.event_name == 'workflow_dispatch' && inputs.deploy == 'production') || (github.event_name == 'push' && github.ref_type == 'branch' && github.ref_name == 'master') }}
-      DEPLOY_STAGE: ${{ (github.event_name == 'workflow_dispatch' && inputs.deploy == 'staging') || (github.event_name == 'push' && github.ref_type == 'branch' && github.ref_name == 'dev') }}
-    if: ${{ (github.event_name == 'workflow_dispatch' && inputs.deploy != 'none') || (github.event_name == 'push' && github.ref_type == 'branch' && (github.ref_name == 'master' || github.ref_name == 'dev')) }}
+      DEPLOY_PROD: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy == 'production') || (github.event_name == 'push' && github.ref_type == 'branch' && github.ref_name == 'master') }}
+      DEPLOY_STAGE: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy == 'staging') || (github.event_name == 'push' && github.ref_type == 'branch' && github.ref_name == 'dev') }}
+    if: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy != 'none') || (github.event_name == 'push' && github.ref_type == 'branch' && (github.ref_name == 'master' || github.ref_name == 'dev')) }}
     runs-on: self-hosted
     concurrency:
       group: ${{ github.workflow }}-deploy-${{ github.ref }}
@@ -196,6 +196,10 @@ jobs:
         uses: azure/setup-kubectl@v2.1
 
       - uses: hmarr/debug-action@v2
+
+      - name: Log inputs
+        run: |
+          echo ${{ github.event.inputs.deploy }}
 
       - name: "[Production] Tag & Push docker images"
         if: ${{ env.DEPLOY_PROD == 'true' }}
