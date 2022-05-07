@@ -1,6 +1,9 @@
 package health
 
 import (
+	"context"
+	"time"
+
 	"github.com/seventv/image-processor/go/internal/global"
 	"github.com/valyala/fasthttp"
 	"go.uber.org/zap"
@@ -19,7 +22,28 @@ func New(gCtx global.Context) <-chan struct{} {
 				}
 			}()
 
-			ctx.SetStatusCode(200)
+			rmqDown := false
+			s3Down := false
+
+			if gCtx.Inst().RMQ != nil && !gCtx.Inst().RMQ.Connected() {
+				rmqDown = true
+				zap.S().Warnw("rmq is not connected")
+			}
+
+			if gCtx.Inst().S3 != nil {
+				lCtx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+				if _, err := gCtx.Inst().S3.ListBuckets(lCtx); err != nil {
+					s3Down = true
+					zap.S().Warnw("s3 is not responding",
+						"error", err,
+					)
+				}
+				cancel()
+			}
+
+			if rmqDown || s3Down {
+				ctx.SetStatusCode(500)
+			}
 		},
 	}
 

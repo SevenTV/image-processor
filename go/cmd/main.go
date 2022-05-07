@@ -75,7 +75,7 @@ func main() {
 			URI: config.RMQ.URI,
 		})
 		if err != nil {
-			zap.S().Fatalw("failed to setup kubemq handler",
+			zap.S().Fatalw("failed to setup rmq handler",
 				"error", err,
 			)
 		}
