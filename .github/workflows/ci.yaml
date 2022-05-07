@@ -216,16 +216,12 @@ jobs:
         if: ${{ env.DEPLOY_PROD == 'true' }}
         env:
           KUBE_CONFIG_DATA: ${{ secrets.KUBECONFIG }}
-          KUBE_IMAGE_PATCH: >-
-            [
-              { "op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "harbor.disembark.dev/7tv/image-processor:${{ github.sha }}" }
-            ]
         run: |
           mkdir -p ~/.kube
           (echo $KUBE_CONFIG_DATA | base64 -d) >> ~/.kube/config
           kubectl config use-context autodeploy@SevenTV
 
-          kubectl patch deploy -n app image-processor --type="json" -p="$KUBE_IMAGE_PATCH"
+          kubectl apply -f k8s/prod.yaml
 
       - name: "[Staging] Tag & Push docker images"
         if: ${{ env.DEPLOY_STAGE == 'true' }}
