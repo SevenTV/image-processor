@@ -45,7 +45,7 @@ func TestWorker(t *testing.T) {
 	gCtx, cancel := global.WithCancel(global.New(context.Background(), &configure.Config{}))
 
 	gCtx.Inst().RMQ, err = rmq.NewMock()
-	testutil.IsNil(t, err, "kubemq init successful")
+	testutil.IsNil(t, err, "rmq init successful")
 	gCtx.Inst().Prometheus = prometheus.New(prometheus.Options{})
 
 	_, cwd, _, _ := runtime.Caller(0)

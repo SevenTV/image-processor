@@ -33,7 +33,7 @@ func TestRun(t *testing.T) {
 	defer cancel()
 
 	gCtx.Inst().RMQ, err = rmq.NewMock()
-	testutil.IsNil(t, err, "kubemq init successful")
+	testutil.IsNil(t, err, "rmq init successful")
 
 	gCtx.Inst().Prometheus = prometheus.New(prometheus.Options{})
 
@@ -92,6 +92,42 @@ func TestRun(t *testing.T) {
 	msg := <-ch
 
 	result := Result{}
+	testutil.IsNil(t, json.Unmarshal(msg.Body, &result), "The response is a result")
+
+	testutil.Assert(t, TaskID, result.ID, "The result is for the task we sent")
+
+	testutil.Assert(t, "", result.Message, "No message was returned")
+
+	testutil.Assert(t, ResultStateSuccess, result.State, "The job processed successfully")
+
+	gCtx.Inst().RMQ.(*rmq.MockInstance).SetConnected(false)
+
+	time.Sleep(time.Second)
+
+	gCtx.Inst().RMQ.(*rmq.MockInstance).SetConnected(true)
+
+	err = gCtx.Inst().RMQ.Publish(instance.RmqPublishRequest{
+		RoutingKey: "image-processor-jobs",
+		Immediate:  true,
+		Mandatory:  true,
+		Publishing: amqp.Publishing{
+			ContentType:  "application/json",
+			ReplyTo:      CallbackEvent,
+			DeliveryMode: amqp.Persistent,
+			Timestamp:    time.Now(),
+			Body:         task,
+		},
+	})
+	testutil.IsNil(t, err, "We send a queue message")
+
+	ch, err = gCtx.Inst().RMQ.Subscribe(gCtx, instance.RmqSubscribeRequest{
+		Queue: CallbackEvent,
+	})
+	testutil.IsNil(t, err, "We can subscribe to a channel")
+
+	msg = <-ch
+
+	result = Result{}
 	testutil.IsNil(t, json.Unmarshal(msg.Body, &result), "The response is a result")
 
 	testutil.Assert(t, TaskID, result.ID, "The result is for the task we sent")
