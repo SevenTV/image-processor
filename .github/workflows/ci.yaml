@@ -195,12 +195,6 @@ jobs:
       - name: Install kubectl
         uses: azure/setup-kubectl@v2.1
 
-      - uses: hmarr/debug-action@v2
-
-      - name: Log inputs
-        run: |
-          echo ${{ github.event.inputs.deploy }}
-
       - name: "[Production] Tag & Push docker images"
         if: ${{ env.DEPLOY_PROD == 'true' }}
         run: |
@@ -251,9 +245,9 @@ jobs:
           output: k8s/dev.yaml
 
       - name: "[Staging] Deploy to k8s"
-        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.deploy == 'staging') || (github.event_name == 'push' && github.ref_type == 'branch' && github.ref_name == 'dev') }}
+        if: ${{ env.DEPLOY_STAGE == 'true' }}
         env:
-          KUBE_CONFIG_DATA: ${{ env.DEPLOY_STAGE == 'true' }}
+          KUBE_CONFIG_DATA: ${{ secrets.KUBECONFIG_STAGE }}
         run: |
           mkdir -p ~/.kube
           (echo $KUBE_CONFIG_DATA | base64 -d) >> ~/.kube/config
