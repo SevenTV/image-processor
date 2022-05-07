@@ -172,7 +172,7 @@ func (m *Instance) TotalBytesDownloaded(bytes int) {
 }
 
 func (m *Instance) TotalBytesUploaded(bytes int) {
-	m.totalBytesDownloaded.Add(float64(bytes))
+	m.totalBytesUploaded.Add(float64(bytes))
 }
 
 func (m *Instance) TotalFramesProcessed(frames int) {
