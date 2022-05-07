@@ -152,6 +152,9 @@ jobs:
     needs:
       - build
       - lint
+    env:
+      DEPLOY_PROD: ${{ (github.event_name == 'workflow_dispatch' && inputs.deploy == 'production') || (github.event_name == 'push' && github.ref_type == 'branch' && github.ref_name == 'master') }}
+      DEPLOY_STAGE: ${{ (github.event_name == 'workflow_dispatch' && inputs.deploy == 'staging') || (github.event_name == 'push' && github.ref_type == 'branch' && github.ref_name == 'dev') }}
     if: ${{ (github.event_name == 'workflow_dispatch' && inputs.deploy != 'none') || (github.event_name == 'push' && github.ref_type == 'branch' && (github.ref_name == 'master' || github.ref_name == 'dev')) }}
     runs-on: self-hosted
     concurrency:
@@ -159,6 +162,9 @@ jobs:
       cancel-in-progress: true
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
       - id: buildx-context
         run: |
           docker context create builders
@@ -190,23 +196,24 @@ jobs:
         uses: azure/setup-kubectl@v2.1
 
       - name: "[Production] Tag & Push docker images"
-        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.deploy == 'production') || (github.event_name == 'push' && github.ref_type == 'branch' && github.ref_name == 'master') }}
+        if: ${{ env.DEPLOY_PROD == 'true' }}
         run: |
           docker tag image-processor:${{ github.sha }} harbor.disembark.dev/7tv/image-processor:latest
           docker tag image-processor:${{ github.sha }} harbor.disembark.dev/7tv/image-processor:${{ github.sha }}
           docker push harbor.disembark.dev/7tv/image-processor:latest
           docker push harbor.disembark.dev/7tv/image-processor:${{ github.sha }}
 
-      - name: "[Staging] Tag & Push docker images"
-        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.deploy == 'staging') || (github.event_name == 'push' && github.ref_type == 'branch' && github.ref_name == 'dev') }}
-        run: |
-          docker tag image-processor:${{ github.sha }} harbor.disembark.dev/7tv-stage/image-processor:latest
-          docker tag image-processor:${{ github.sha }} harbor.disembark.dev/7tv-stage/image-processor:${{ github.sha }}
-          docker push harbor.disembark.dev/7tv-stage/image-processor:latest
-          docker push harbor.disembark.dev/7tv-stage/image-processor:${{ github.sha }}
+      - name: "[Production] Update deployment template"
+        uses: danielr1996/envsubst-action@1.1.0
+        if: ${{ env.DEPLOY_PROD == 'true' }}
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        with:
+          input: k8s/prod.template.yaml
+          output: k8s/prod.yaml
 
       - name: "[Production] Deploy to k8s"
-        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.deploy == 'production') || (github.event_name == 'push' && github.ref_type == 'branch' && github.ref_name == 'master') }}
+        if: ${{ env.DEPLOY_PROD == 'true' }}
         env:
           KUBE_CONFIG_DATA: ${{ secrets.KUBECONFIG }}
           KUBE_IMAGE_PATCH: >-
@@ -220,17 +227,30 @@ jobs:
 
           kubectl patch deploy -n app image-processor --type="json" -p="$KUBE_IMAGE_PATCH"
 
+      - name: "[Staging] Tag & Push docker images"
+        if: ${{ env.DEPLOY_STAGE == 'true' }}
+        run: |
+          docker tag image-processor:${{ github.sha }} harbor.disembark.dev/7tv-stage/image-processor:latest
+          docker tag image-processor:${{ github.sha }} harbor.disembark.dev/7tv-stage/image-processor:${{ github.sha }}
+          docker push harbor.disembark.dev/7tv-stage/image-processor:latest
+          docker push harbor.disembark.dev/7tv-stage/image-processor:${{ github.sha }}
+
+      - name: "[Staging] Update deployment template"
+        uses: danielr1996/envsubst-action@1.1.0
+        if: ${{ env.DEPLOY_STAGE == 'true' }}
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        with:
+          input: k8s/dev.template.yaml
+          output: k8s/dev.yaml
+
       - name: "[Staging] Deploy to k8s"
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.deploy == 'staging') || (github.event_name == 'push' && github.ref_type == 'branch' && github.ref_name == 'dev') }}
         env:
-          KUBE_CONFIG_DATA: ${{ secrets.KUBECONFIG_STAGE }}
-          KUBE_IMAGE_PATCH: >-
-            [
-              { "op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "harbor.disembark.dev/7tv-stage/image-processor:${{ github.sha }}" }
-            ]
+          KUBE_CONFIG_DATA: ${{ env.DEPLOY_STAGE == 'true' }}
         run: |
           mkdir -p ~/.kube
           (echo $KUBE_CONFIG_DATA | base64 -d) >> ~/.kube/config
           kubectl config use-context autodeploy@SevenTV
 
-          kubectl patch deploy -n app-dev image-processor --type="json" -p="$KUBE_IMAGE_PATCH"
+          kubectl apply -f k8s/dev.yaml
