@@ -1,0 +1,139 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: image-processor
+  namespace: app
+  labels:
+    app: image-processor
+spec:
+  selector:
+    matchLabels:
+      app: image-processor
+  template:
+    metadata:
+      labels:
+        app: image-processor
+    spec:
+      terminationGracePeriodSeconds: 30
+      imagePullSecrets:
+        - name: regcred
+      containers:
+        - name: image-processor
+          image: harbor.disembark.dev/7tv/image-processor:${IMAGE_TAG}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: metrics
+              containerPort: 9100
+              protocol: TCP
+            - name: health
+              containerPort: 9000
+              protocol: TCP
+          livenessProbe:
+            tcpSocket:
+              port: health
+            initialDelaySeconds: 30
+            timeoutSeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 6
+          readinessProbe:
+            tcpSocket:
+              port: health
+            initialDelaySeconds: 5
+            timeoutSeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 6
+          envFrom:
+            - secretRef:
+                name: image-processor-secret
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          volumeMounts:
+            - mountPath: /app/config.yaml
+              subPath: config.yaml
+              name: config
+            - mountPath: /tempfs
+              name: tempfs
+          resources:
+            requests:
+              memory: "4Gi"
+              cpu: "4"
+            limits:
+              memory: "24Gi"
+              cpu: "24"
+      volumes:
+        - name: config
+          configMap:
+            name: image-processor-config
+        - name: tempfs
+          emptyDir:
+            medium: Memory
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: image-processor-config
+  namespace: app
+data:
+  config.yaml: |
+    level: debug
+    worker:
+      temp_dir: /tempfs
+    health:
+      enabled: true
+      bind: 0.0.0.0:9000
+    rmq:
+      jobs_queue: jobs
+    s3:
+      region: us-east-1
+      endpoint: http://rook-ceph-rgw-ceph-objectstore.rook-ceph.svc
+    monitoring:
+      bind: 0.0.0.0:9100
+      enabled: true
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: image-processor-servicemonitor
+  namespace: monitoring
+  labels:
+    app: image-processor
+    release: prometheus
+spec:
+  jobLabel: image-processor
+  selector:
+    matchLabels:
+      app: image-processor
+  namespaceSelector:
+    matchNames:
+      - app
+  endpoints:
+    - port: metrics
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: image-processor-svc
+  namespace: app-dev
+  labels:
+    app: image-processor
+spec:
+  clusterIP: None
+  ports:
+    - name: metrics
+      port: 9100
+      targetPort: metrics
+  selector:
+    app: image-processor

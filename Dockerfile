@@ -164,14 +164,15 @@ FROM deps as go-builder
 
     COPY go .
 
-    ARG BUILDER
-    ARG VERSION
 
     COPY assets /tmp/assets
 
     COPY --from=cpp-builder /usr/local /usr/local
 
     RUN ldconfig && make test
+
+    ARG BUILDER
+    ARG VERSION
 
     ENV IMAGES_BUILDER=${BUILDER}
     ENV IMAGES_VERSION=${VERSION}
