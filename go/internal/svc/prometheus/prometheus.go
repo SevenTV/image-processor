@@ -85,7 +85,7 @@ func New(o Options) instance.Prometheus {
 		}),
 		makeResultsDurationSeconds: prometheus.NewHistogram(prometheus.HistogramOpts{
 			Namespace:   "image_processor",
-			Name:        "download_file_duration_seconds",
+			Name:        "make_results_duration_seconds",
 			Help:        "The seconds spent downloading files",
 			ConstLabels: makeResultsDuration,
 		}),
