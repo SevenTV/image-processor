@@ -38,6 +38,7 @@ func (w Worker) Work(ctx global.Context, task Task, result *Result) (err error) 
 	if result == nil {
 		return fmt.Errorf("nil for result")
 	}
+	finish := ctx.Inst().Prometheus.StartTask()
 
 	result.StartedAt = time.Now()
 	defer func() {
@@ -46,6 +47,7 @@ func (w Worker) Work(ctx global.Context, task Task, result *Result) (err error) 
 		}
 
 		result.FinishedAt = time.Now()
+		finish(err == nil)
 	}()
 
 	id := uuid.New().String()
@@ -56,30 +58,48 @@ func (w Worker) Work(ctx global.Context, task Task, result *Result) (err error) 
 
 	defer os.RemoveAll(tmpDir)
 
+	done := ctx.Inst().Prometheus.DownloadFile()
 	raw, match, inputFile, err := w.downloadFile(ctx, task, tmpDir, result)
 	if err != nil {
 		return multierr.Append(fmt.Errorf("failed at download file"), err)
 	}
+	done()
 
+	ctx.Inst().Prometheus.TotalBytesDownloaded(len(raw))
+
+	done = ctx.Inst().Prometheus.ExportFrames()
 	delays, inputDir, err := w.exportFrames(ctx, tmpDir, inputFile, match, raw)
 	if err != nil {
 		return multierr.Append(fmt.Errorf("failed at export frames"), err)
 	}
+	done()
 
+	ctx.Inst().Prometheus.TotalFramesProcessed(len(delays))
+
+	done = ctx.Inst().Prometheus.ResizeFrames()
 	variantsDir, err := w.resizeFrames(ctx, inputDir, tmpDir, task, delays)
 	if err != nil {
 		return multierr.Append(fmt.Errorf("failed at resize file"), err)
 	}
+	done()
 
+	done = ctx.Inst().Prometheus.MakeResults()
 	resultsDir, err := w.makeResults(tmpDir, delays, task, variantsDir, ctx, inputDir, inputFile)
 	if err != nil {
 		return multierr.Append(fmt.Errorf("failed at make results"), err)
 	}
+	done()
 
-	return multierr.Append(
+	done = ctx.Inst().Prometheus.UploadResults()
+	if err = multierr.Append(
 		w.uploadResults(tmpDir, resultsDir, variantsDir, task, result, ctx),
 		ctx.Err(),
-	)
+	); err != nil {
+		return err
+	}
+	done()
+
+	return nil
 }
 
 func (Worker) downloadFile(ctx global.Context, task Task, tmpDir string, result *Result) (raw []byte, match types.Type, inputFile string, err error) {
@@ -230,6 +250,8 @@ func (Worker) uploadResults(tmpDir string, resultsDir string, variantsDir string
 			uploadErr = multierr.Append(fmt.Errorf("failed at hash data"), multierr.Append(err, uploadErr))
 			return
 		}
+
+		ctx.Inst().Prometheus.TotalBytesUploaded(len(data))
 
 		sha3 := hex.EncodeToString(h.Sum(nil))
 
