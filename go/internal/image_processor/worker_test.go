@@ -98,3 +98,57 @@ func TestWorker(t *testing.T) {
 		cancel()
 	}()
 }
+
+func TestWorkerFailed(t *testing.T) {
+	t.Parallel()
+
+	var err error
+	gCtx, cancel := global.WithCancel(global.New(context.Background(), &configure.Config{}))
+
+	gCtx.Inst().RMQ, err = rmq.NewMock()
+	testutil.IsNil(t, err, "kubemq init successful")
+	gCtx.Inst().Prometheus = prometheus.New(prometheus.Options{})
+
+	f := map[string]map[string][]byte{
+		"input":  {},
+		"output": {},
+	}
+
+	gCtx.Inst().S3, err = s3.NewMock(gCtx, f)
+	testutil.IsNil(t, err, "s3 init successful")
+
+	wg := sync.WaitGroup{}
+	wg.Add(len(assets))
+
+	for _, file := range assets {
+		file := file
+		t.Run(fmt.Sprintf("test %s", file), func(t *testing.T) {
+			t.Parallel()
+
+			defer wg.Done()
+
+			worker := Worker{}
+			result := Result{}
+			err := worker.Work(gCtx, Task{
+				Flags: TaskFlagALL,
+				Input: TaskInput{
+					Bucket: "input",
+					Key:    file,
+				},
+				Output: TaskOutput{
+					Bucket: "output",
+					Prefix: file,
+				},
+				SmallestMaxWidth:  96,
+				SmallestMaxHeight: 32,
+				Scales:            []int{1, 2, 3, 4},
+			}, &result)
+			testutil.IsNotNil(t, err, "Convert was unsuccessful successful")
+		})
+	}
+
+	go func() {
+		wg.Wait()
+		cancel()
+	}()
+}

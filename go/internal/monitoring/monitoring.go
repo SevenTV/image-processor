@@ -10,12 +10,11 @@ import (
 )
 
 func New(gCtx global.Context) <-chan struct{} {
-	r := prometheus.NewRegistry()
-	gCtx.Inst().Prometheus.Register(r)
+	gCtx.Inst().Prometheus.Register(prometheus.DefaultRegisterer)
 
 	server := fasthttp.Server{
-		Handler: fasthttpadaptor.NewFastHTTPHandler(promhttp.HandlerFor(r, promhttp.HandlerOpts{
-			Registry:          r,
+		Handler: fasthttpadaptor.NewFastHTTPHandler(promhttp.HandlerFor(prometheus.DefaultGatherer, promhttp.HandlerOpts{
+			Registry:          prometheus.DefaultRegisterer,
 			EnableOpenMetrics: true,
 		})),
 		GetOnly:          true,
