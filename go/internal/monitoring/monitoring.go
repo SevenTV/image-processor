@@ -1,7 +1,6 @@
 package monitoring
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/seventv/image-processor/go/internal/global"
 	"github.com/valyala/fasthttp"
@@ -10,12 +9,11 @@ import (
 )
 
 func New(gCtx global.Context) <-chan struct{} {
-	r := prometheus.NewRegistry()
-	gCtx.Inst().Prometheus.Register(r)
+	registry := gCtx.Inst().Prometheus.Registry()
 
 	server := fasthttp.Server{
-		Handler: fasthttpadaptor.NewFastHTTPHandler(promhttp.HandlerFor(r, promhttp.HandlerOpts{
-			Registry:          r,
+		Handler: fasthttpadaptor.NewFastHTTPHandler(promhttp.HandlerFor(registry, promhttp.HandlerOpts{
+			Registry:          registry,
 			EnableOpenMetrics: true,
 		})),
 		GetOnly:          true,

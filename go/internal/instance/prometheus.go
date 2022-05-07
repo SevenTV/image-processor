@@ -1,12 +1,8 @@
 package instance
 
-import (
-	"github.com/prometheus/client_golang/prometheus"
-)
+import "github.com/prometheus/client_golang/prometheus"
 
 type Prometheus interface {
-	Register(r prometheus.Registerer)
-
 	StartTask() func(success bool)
 
 	DownloadFile() func()
@@ -18,4 +14,8 @@ type Prometheus interface {
 	TotalFramesProcessed(int)
 	TotalBytesDownloaded(int)
 	TotalBytesUploaded(int)
+
+	InputFileType(string)
+
+	Registry() *prometheus.Registry
 }

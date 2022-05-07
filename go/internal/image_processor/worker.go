@@ -65,6 +65,8 @@ func (w Worker) Work(ctx global.Context, task Task, result *Result) (err error) 
 	}
 	done()
 
+	ctx.Inst().Prometheus.InputFileType(match.MIME.Value)
+
 	ctx.Inst().Prometheus.TotalBytesDownloaded(len(raw))
 
 	done = ctx.Inst().Prometheus.ExportFrames()
