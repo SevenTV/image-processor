@@ -204,7 +204,7 @@ jobs:
           docker push harbor.disembark.dev/7tv/image-processor:${{ github.sha }}
 
       - name: "[Production] Update deployment template"
-        uses: nowactions/envsubst@v1.0.1
+        uses: danielr1996/envsubst-action@1.1.0
         if: ${{ env.DEPLOY_PROD == 'true' }}
         env:
           IMAGE_TAG: ${{ github.sha }}
