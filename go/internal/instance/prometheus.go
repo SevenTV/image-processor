@@ -17,5 +17,5 @@ type Prometheus interface {
 
 	InputFileType(string)
 
-	Registry() *prometheus.Registry
+	Register(prometheus.Registerer)
 }

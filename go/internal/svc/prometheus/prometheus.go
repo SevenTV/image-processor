@@ -12,7 +12,7 @@ type Options struct {
 }
 
 func New(o Options) instance.Prometheus {
-	m := &Instance{
+	return &Instance{
 		totalTasks: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace:   "image_processor",
 			Name:        "total_tasks",
@@ -55,22 +55,7 @@ func New(o Options) instance.Prometheus {
 			Help:        "The mime type of input images",
 			ConstLabels: o.Labels,
 		}, []string{"content_type"}),
-		registry: prometheus.NewRegistry(),
 	}
-
-	m.registry.MustRegister(
-		m.currentTasks,
-		m.taskDurationSeconds,
-		m.totalTasks,
-		m.taskInputType,
-
-		m.totalBytes,
-		m.totalFiles,
-
-		m.totalFramesProcessed,
-	)
-
-	return m
 }
 
 type Instance struct {
@@ -83,12 +68,20 @@ type Instance struct {
 	totalFramesProcessed prometheus.Counter
 
 	taskInputType *prometheus.CounterVec
-
-	registry *prometheus.Registry
 }
 
-func (m *Instance) Registry() *prometheus.Registry {
-	return m.registry
+func (m *Instance) Register(r prometheus.Registerer) {
+	r.MustRegister(
+		m.currentTasks,
+		m.taskDurationSeconds,
+		m.totalTasks,
+		m.taskInputType,
+
+		m.totalBytes,
+		m.totalFiles,
+
+		m.totalFramesProcessed,
+	)
 }
 
 func (m *Instance) StartTask() func(success bool) {
