@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/SevenTV/Common v0.0.0-20220416145422-0b3ce3e265e2
-	github.com/aws/aws-sdk-go v1.44.8
+	github.com/aws/aws-sdk-go v1.44.19
 	github.com/bugsnag/panicwrap v1.3.4
 	github.com/google/uuid v1.3.0
 	github.com/h2non/filetype v1.1.3
