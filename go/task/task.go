@@ -1,5 +1,7 @@
 package task
 
+import "time"
+
 type TaskFlag int32
 
 const (
@@ -25,9 +27,10 @@ type Task struct {
 }
 
 type TaskLimits struct {
-	MaxFrameCount int `json:"max_frame_count"`
-	MaxWidth      int `json:"max_width"`
-	MaxHeight     int `json:"max_height"`
+	MaxProcessingTime time.Duration `json:"max_processing_time"`
+	MaxFrameCount     int           `json:"max_frame_count"`
+	MaxWidth          int           `json:"max_width"`
+	MaxHeight         int           `json:"max_height"`
 }
 
 type TaskInput struct {

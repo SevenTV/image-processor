@@ -116,8 +116,8 @@ func process(gCtx global.Context, msg *messagequeue.IncomingMessage, workers cha
 		cancel context.CancelFunc
 	)
 
-	if gCtx.Config().Worker.TimeoutSeconds != 0 {
-		ctx, cancel = global.WithTimeout(gCtx, time.Second*time.Duration(gCtx.Config().Worker.TimeoutSeconds))
+	if t.Limits.MaxProcessingTime != 0 {
+		ctx, cancel = global.WithTimeout(gCtx, t.Limits.MaxProcessingTime)
 	} else {
 		ctx, cancel = global.WithCancel(gCtx)
 	}
