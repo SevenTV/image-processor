@@ -146,6 +146,21 @@ func process(gCtx global.Context, msg *messagequeue.IncomingMessage, workers cha
 				"message", result.Message,
 			)
 		}()
+		go func() {
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-time.After(time.Second * 15):
+					if err := msg.Extend(ctx, time.Second*30); err != nil && err != messagequeue.ErrUnimplemented {
+						zap.S().Errorw("task failed to extend lease",
+							"error", err,
+						)
+						cancel()
+					}
+				}
+			}
+		}()
 
 		err := worker.Work(ctx, t, &result)
 		if err != nil {
