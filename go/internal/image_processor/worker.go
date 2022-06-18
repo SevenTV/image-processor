@@ -3,6 +3,7 @@ package image_processor
 import (
 	"archive/zip"
 	"bytes"
+	"context"
 	"encoding/hex"
 	"fmt"
 	"image/gif"
@@ -77,10 +78,23 @@ func (w Worker) Work(ctx global.Context, task task.Task, result *Result) (err er
 	}
 	done()
 
+	if task.Limits.MaxFrames != 0 && len(delays) > task.Limits.MaxFrames {
+		return fmt.Errorf("file has too many frames (%d where the limit is %d)", len(delays), task.Limits.MaxFrames)
+	}
+
 	ctx.Inst().Prometheus.TotalFramesProcessed(len(delays))
 
+	width, height, err := w.getWidthHeight(ctx, path.Join(inputDir, "0000.png"))
+	if err != nil {
+		return multierr.Append(fmt.Errorf("failed at get width height"), err)
+	}
+
+	if (task.Limits.MaxWidth != 0 && task.Limits.MaxWidth < width) || (task.Limits.MaxHeight != 0 && task.Limits.MaxHeight < height) {
+		return fmt.Errorf("file dimensions are too big (%dx%d where the limit is %dx%d)", width, height, task.Limits.MaxWidth, task.Limits.MaxHeight)
+	}
+
 	done = ctx.Inst().Prometheus.ResizeFrames()
-	variantsDir, err := w.resizeFrames(ctx, inputDir, tmpDir, task, delays)
+	variantsDir, err := w.resizeFrames(ctx, inputDir, tmpDir, task, width, height, delays)
 	if err != nil {
 		return multierr.Append(fmt.Errorf("failed at resize file"), err)
 	}
@@ -572,7 +586,34 @@ func (Worker) makeResults(tmpDir string, delays []int, tsk task.Task, variantsDi
 	return resultsDir, nil
 }
 
-func (Worker) resizeFrames(ctx global.Context, inputDir string, tmpDir string, tsk task.Task, delays []int) (variantsDir string, err error) {
+func (Worker) getWidthHeight(ctx context.Context, image string) (int, int, error) {
+	out, err := exec.CommandContext(ctx,
+		"ffprobe",
+		"-v", "error",
+		"-select_streams", "v",
+		"-of", "default=noprint_wrappers=1:nokey=1",
+		"-show_entries", "stream=width,height",
+		image,
+	).CombinedOutput()
+	if err != nil {
+		return 0, 0, multierr.Append(fmt.Errorf("failed at ffprobe"), multierr.Append(err, fmt.Errorf("ffprobe failed: %s", out)))
+	}
+
+	widthHeight := strings.SplitN(strings.TrimSpace(utils.B2S(out)), "\n", 2)
+
+	width, err := strconv.Atoi(widthHeight[0])
+	if err != nil {
+		return 0, 0, multierr.Append(fmt.Errorf("failed at parse width"), multierr.Append(err, fmt.Errorf("ffprobe failed: %s", out)))
+	}
+	height, err := strconv.Atoi(widthHeight[1])
+	if err != nil {
+		return 0, 0, multierr.Append(fmt.Errorf("failed at parse height"), multierr.Append(err, fmt.Errorf("ffprobe failed: %s", out)))
+	}
+
+	return width, height, nil
+}
+
+func (Worker) resizeFrames(ctx global.Context, inputDir string, tmpDir string, tsk task.Task, width int, height int, delays []int) (variantsDir string, err error) {
 	// Syntax: resize_png [options] -i input.png -r 100 100 -o out.png -r 50 50 -o out2.png
 	// Options:
 	//	 -h,--help                   : Shows syntax help
@@ -585,29 +626,6 @@ func (Worker) resizeFrames(ctx global.Context, inputDir string, tmpDir string, t
 			err = multierr.Append(fmt.Errorf("panic at runtime: %v", pnk), err)
 		}
 	}()
-
-	out, err := exec.CommandContext(ctx,
-		"ffprobe",
-		"-v", "error",
-		"-select_streams", "v",
-		"-of", "default=noprint_wrappers=1:nokey=1",
-		"-show_entries", "stream=width,height",
-		path.Join(inputDir, "0000.png"),
-	).CombinedOutput()
-	if err != nil {
-		return "", multierr.Append(fmt.Errorf("failed at ffprobe"), multierr.Append(err, fmt.Errorf("ffprobe failed: %s", out)))
-	}
-
-	widthHeight := strings.SplitN(strings.TrimSpace(utils.B2S(out)), "\n", 2)
-
-	width, err := strconv.Atoi(widthHeight[0])
-	if err != nil {
-		return "", multierr.Append(fmt.Errorf("failed at parse width"), multierr.Append(err, fmt.Errorf("ffprobe failed: %s", out)))
-	}
-	height, err := strconv.Atoi(widthHeight[1])
-	if err != nil {
-		return "", multierr.Append(fmt.Errorf("failed at parse height"), multierr.Append(err, fmt.Errorf("ffprobe failed: %s", out)))
-	}
 
 	variantsDir = path.Join(tmpDir, "variants")
 	err = os.MkdirAll(variantsDir, 0700)
@@ -649,7 +667,7 @@ func (Worker) resizeFrames(ctx global.Context, inputDir string, tmpDir string, t
 		}
 	}
 
-	out, err = exec.CommandContext(ctx,
+	out, err := exec.CommandContext(ctx,
 		"resize_png",
 		resizeArgs...,
 	).CombinedOutput()

@@ -18,9 +18,16 @@ type Task struct {
 	Flags             TaskFlag   `json:"flags"`
 	Input             TaskInput  `json:"input"`
 	Output            TaskOutput `json:"output"`
-	SmallestMaxWidth  int        `json:"smallest_max_width"`  // 128
+	SmallestMaxWidth  int        `json:"smallest_max_width"`  // 96
 	SmallestMaxHeight int        `json:"smallest_max_height"` // 32
 	Scales            []int      `json:"scales"`              // 1, 2, 3, 4 for 1x, 2x, 3x, 4x
+	Limits            TaskLimits `json:"limits"`
+}
+
+type TaskLimits struct {
+	MaxFrames int `json:"max_frames"`
+	MaxWidth  int `json:"max_width"`
+	MaxHeight int `json:"max_height"`
 }
 
 type TaskInput struct {
