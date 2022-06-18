@@ -78,8 +78,8 @@ func (w Worker) Work(ctx global.Context, task task.Task, result *Result) (err er
 	}
 	done()
 
-	if task.Limits.MaxFrames != 0 && len(delays) > task.Limits.MaxFrames {
-		return fmt.Errorf("file has too many frames (%d where the limit is %d)", len(delays), task.Limits.MaxFrames)
+	if task.Limits.MaxFrameCount != 0 && len(delays) > task.Limits.MaxFrameCount {
+		return fmt.Errorf("file has too many frames (%d where the limit is %d)", len(delays), task.Limits.MaxFrameCount)
 	}
 
 	ctx.Inst().Prometheus.TotalFramesProcessed(len(delays))

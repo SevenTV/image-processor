@@ -1,6 +1,8 @@
 cpp/build
 cpp/out
-cpp/third-party/**/*
+cpp/third-party
+build
+out
 node_modules/
 assets/
 Dockerfile
