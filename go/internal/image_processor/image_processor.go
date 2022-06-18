@@ -1,6 +1,7 @@
 package image_processor
 
 import (
+	"context"
 	"encoding/json"
 	"runtime"
 	"time"
@@ -110,7 +111,16 @@ func process(gCtx global.Context, msg *messagequeue.IncomingMessage, workers cha
 
 	worker := <-workers
 
-	ctx, cancel := global.WithCancel(gCtx)
+	var (
+		ctx    global.Context
+		cancel context.CancelFunc
+	)
+
+	if gCtx.Config().Worker.TimeoutSeconds != 0 {
+		ctx, cancel = global.WithTimeout(gCtx, time.Second*time.Duration(gCtx.Config().Worker.TimeoutSeconds))
+	} else {
+		ctx, cancel = global.WithCancel(gCtx)
+	}
 	result := Result{
 		ID:    t.ID,
 		State: ResultStateFailed,
