@@ -4,13 +4,13 @@
 
 Update your apt repo
 
-```
+```bash
 sudo apt-get update
 ```
 
 Install all these packages used for building.
 
-```
+```bash
 sudo apt-get install \
     ca-certificates \
     build-essential \
@@ -36,7 +36,7 @@ sudo apt-get install \
 
 You will also need the rust compiler
 
-```
+```bash
 curl https://sh.rustup.rs -sSf | bash -s -- -y
 ```
 
@@ -44,13 +44,13 @@ curl https://sh.rustup.rs -sSf | bash -s -- -y
 
 To fetch them do
 
-```
+```bash
 git submodule sync && git submodule update --init
 ```
 
 Then run to build all the submodules, this will take a long time.
 
-```
+```bash
 make external
 ```
 
@@ -58,7 +58,7 @@ make external
 
 Now that everything else is installed you can simply run this to build the application.
 
-```
+```bash
 make
 ```
 
@@ -68,13 +68,13 @@ The output folder should be created in `./out`
 
 If you wish to clean up you can run
 
-```
+```bash
 make clean
 ```
 
 this will clean the application build, if you want to clean all submodule build you must run
 
-```
+```bash
 make external_clean
 ```
 
@@ -84,12 +84,12 @@ The formatters we use are `clang-format` and `cmake-format`
 
 ### Installing Clang-Format
 
-```
+```bash
 sudo apt-get install clang-format
 ```
 
 ### Installing CMake-Format (requires python3)
 
-```
+```bash
 pip3 install cmake-format
 ```

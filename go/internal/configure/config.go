@@ -85,6 +85,13 @@ func bindEnvs(config *viper.Viper, iface interface{}, parts ...string) {
 	}
 }
 
+type MessageQueueMode string
+
+const (
+	MessageQueueModeRMQ = "RMQ"
+	MessageQueueModeSQS = "SQS"
+)
+
 type Config struct {
 	Level      string `mapstructure:"level" json:"level"`
 	ConfigFile string `mapstructure:"config" json:"config"`
@@ -100,10 +107,20 @@ type Config struct {
 		Enabled bool   `mapstructure:"enabled" json:"enabled"`
 	} `mapstructure:"health" json:"health"`
 
-	RMQ struct {
-		URI       string `mapstructure:"uri" json:"uri"`
-		JobsQueue string `mapstructure:"jobs_queue" json:"jobs_queue"`
-	} `mapstructure:"rmq" json:"rmq"`
+	MessageQueue struct {
+		Mode      MessageQueueMode `mapstructure:"mode" json:"mode"`
+		JobsQueue string           `mapstructure:"jobs_queue" json:"jobs_queue"`
+		RMQ       struct {
+			URI                  string `mapstructure:"uri" json:"uri"`
+			MaxReconnectAttempts int    `mapstructure:"max_reconnect_attempts" json:"max_reconnect_attempts"`
+		} `mapstructure:"rmq" json:"rmq"`
+		SQS struct {
+			Region           string `mapstructure:"region" json:"region"`
+			AccessToken      string `mapstructure:"access_token" json:"access_token"`
+			SecretKey        string `mapstructure:"secret_key" json:"secret_key"`
+			MaxRetryAttempts int    `mapstructure:"max_retry_attempts" json:"max_retry_attempts"`
+		} `mapstructure:"sqs" json:"sqs"`
+	} `mapstructure:"message_queue" json:"message_queue"`
 
 	S3 struct {
 		Region      string `mapstructure:"region" json:"region"`

@@ -10,30 +10,26 @@ import (
 
 	"github.com/seventv/image-processor/go/internal/configure"
 	"github.com/seventv/image-processor/go/internal/global"
-	"github.com/seventv/image-processor/go/internal/instance"
 	"github.com/seventv/image-processor/go/internal/svc/prometheus"
-	"github.com/seventv/image-processor/go/internal/svc/rmq"
 	"github.com/seventv/image-processor/go/internal/svc/s3"
 	"github.com/seventv/image-processor/go/internal/testutil"
-	"github.com/streadway/amqp"
+	"github.com/seventv/image-processor/go/task"
+	messagequeue "github.com/seventv/message-queue/go"
 )
 
 func TestRun(t *testing.T) {
 	t.Parallel()
 
+	const jobQueue = "image-processor-jobs"
+
 	var err error
-	gCtx, cancel := global.WithCancel(global.New(context.Background(), &configure.Config{
-		RMQ: struct {
-			URI       string "mapstructure:\"uri\" json:\"uri\""
-			JobsQueue string "mapstructure:\"jobs_queue\" json:\"jobs_queue\""
-		}{
-			JobsQueue: "image-processor-jobs",
-		},
-	}))
+	config := configure.Config{}
+	config.MessageQueue.JobsQueue = jobQueue
+	gCtx, cancel := global.WithCancel(global.New(context.Background(), &config))
 	defer cancel()
 
-	gCtx.Inst().RMQ, err = rmq.NewMock()
-	testutil.IsNil(t, err, "rmq init successful")
+	gCtx.Inst().MessageQueue, err = messagequeue.New(gCtx, messagequeue.ConfigMock{})
+	testutil.IsNil(t, err, "mq init successful")
 
 	gCtx.Inst().Prometheus = prometheus.New(prometheus.Options{})
 
@@ -53,14 +49,14 @@ func TestRun(t *testing.T) {
 	const TaskID = "batchest-test-123"
 	const CallbackEvent = "image-processor-results"
 
-	task, err := json.Marshal(Task{
+	task, err := json.Marshal(task.Task{
 		ID:    TaskID,
-		Flags: TaskFlagALL,
-		Input: TaskInput{
+		Flags: task.TaskFlagALL,
+		Input: task.TaskInput{
 			Bucket: "input",
 			Key:    "animated-2.gif",
 		},
-		Output: TaskOutput{
+		Output: task.TaskOutput{
 			Bucket: "output",
 			Prefix: "output",
 		},
@@ -70,21 +66,20 @@ func TestRun(t *testing.T) {
 	})
 	testutil.IsNil(t, err, "task marshals")
 
-	err = gCtx.Inst().RMQ.Publish(instance.RmqPublishRequest{
-		RoutingKey: "image-processor-jobs",
-		Immediate:  true,
-		Mandatory:  true,
-		Publishing: amqp.Publishing{
-			ContentType:  "application/json",
-			ReplyTo:      CallbackEvent,
-			DeliveryMode: amqp.Persistent,
-			Timestamp:    time.Now(),
-			Body:         task,
-		},
+	headers := messagequeue.MessageHeaders{}
+	headers.SetContentType("application/json")
+	headers.SetReplyTo(CallbackEvent)
+	headers.SetTimestamp(time.Now())
+
+	err = gCtx.Inst().MessageQueue.Publish(gCtx, messagequeue.OutgoingMessage{
+		Queue:   jobQueue,
+		Flags:   messagequeue.MessageFlags{},
+		Body:    task,
+		Headers: headers,
 	})
 	testutil.IsNil(t, err, "We send a queue message")
 
-	ch, err := gCtx.Inst().RMQ.Subscribe(gCtx, instance.RmqSubscribeRequest{
+	ch, err := gCtx.Inst().MessageQueue.Subscribe(gCtx, messagequeue.Subscription{
 		Queue: CallbackEvent,
 	})
 	testutil.IsNil(t, err, "We can subscribe to a channel")
@@ -92,7 +87,7 @@ func TestRun(t *testing.T) {
 	msg := <-ch
 
 	result := Result{}
-	testutil.IsNil(t, json.Unmarshal(msg.Body, &result), "The response is a result")
+	testutil.IsNil(t, json.Unmarshal(msg.Body(), &result), "The response is a result")
 
 	testutil.Assert(t, TaskID, result.ID, "The result is for the task we sent")
 
@@ -100,27 +95,21 @@ func TestRun(t *testing.T) {
 
 	testutil.Assert(t, ResultStateSuccess, result.State, "The job processed successfully")
 
-	gCtx.Inst().RMQ.(*rmq.MockInstance).SetConnected(false)
+	gCtx.Inst().MessageQueue.(*messagequeue.InstanceMock).SetConnected(false)
 
 	time.Sleep(time.Second)
 
-	gCtx.Inst().RMQ.(*rmq.MockInstance).SetConnected(true)
+	gCtx.Inst().MessageQueue.(*messagequeue.InstanceMock).SetConnected(true)
 
-	err = gCtx.Inst().RMQ.Publish(instance.RmqPublishRequest{
-		RoutingKey: "image-processor-jobs",
-		Immediate:  true,
-		Mandatory:  true,
-		Publishing: amqp.Publishing{
-			ContentType:  "application/json",
-			ReplyTo:      CallbackEvent,
-			DeliveryMode: amqp.Persistent,
-			Timestamp:    time.Now(),
-			Body:         task,
-		},
+	err = gCtx.Inst().MessageQueue.Publish(gCtx, messagequeue.OutgoingMessage{
+		Queue:   jobQueue,
+		Flags:   messagequeue.MessageFlags{},
+		Body:    task,
+		Headers: headers,
 	})
 	testutil.IsNil(t, err, "We send a queue message")
 
-	ch, err = gCtx.Inst().RMQ.Subscribe(gCtx, instance.RmqSubscribeRequest{
+	ch, err = gCtx.Inst().MessageQueue.Subscribe(gCtx, messagequeue.Subscription{
 		Queue: CallbackEvent,
 	})
 	testutil.IsNil(t, err, "We can subscribe to a channel")
@@ -128,7 +117,7 @@ func TestRun(t *testing.T) {
 	msg = <-ch
 
 	result = Result{}
-	testutil.IsNil(t, json.Unmarshal(msg.Body, &result), "The response is a result")
+	testutil.IsNil(t, json.Unmarshal(msg.Body(), &result), "The response is a result")
 
 	testutil.Assert(t, TaskID, result.ID, "The result is for the task we sent")
 

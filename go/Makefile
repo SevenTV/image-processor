@@ -36,5 +36,9 @@ dev_deps:
 test:
 	go test -count=1 -cover -parallel $$(nproc) -race ./...
 
+work:
+	echo "go 1.18\n\nuse (\n\t.\n\t../../Common\n\t../../message-queue\n)" > go.work
+	go mod tidy
+
 clean:
 	rm -rf bin

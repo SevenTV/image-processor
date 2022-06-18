@@ -51,4 +51,7 @@ cpp/third-party/opencv/build
 cpp/third-party/rav1e/target
 cpp/third-party/FFmpeg/build
 
+go.work
+go.work.sum
+
 Dockerfile

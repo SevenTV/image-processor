@@ -11,9 +11,10 @@ import (
 	"github.com/seventv/image-processor/go/internal/configure"
 	"github.com/seventv/image-processor/go/internal/global"
 	"github.com/seventv/image-processor/go/internal/svc/prometheus"
-	"github.com/seventv/image-processor/go/internal/svc/rmq"
 	"github.com/seventv/image-processor/go/internal/svc/s3"
 	"github.com/seventv/image-processor/go/internal/testutil"
+	"github.com/seventv/image-processor/go/task"
+	messagequeue "github.com/seventv/message-queue/go"
 )
 
 var assets = []string{
@@ -44,8 +45,8 @@ func TestWorker(t *testing.T) {
 	var err error
 	gCtx, cancel := global.WithCancel(global.New(context.Background(), &configure.Config{}))
 
-	gCtx.Inst().RMQ, err = rmq.NewMock()
-	testutil.IsNil(t, err, "rmq init successful")
+	gCtx.Inst().MessageQueue, err = messagequeue.New(gCtx, messagequeue.ConfigMock{})
+	testutil.IsNil(t, err, "mq init successful")
 	gCtx.Inst().Prometheus = prometheus.New(prometheus.Options{})
 
 	_, cwd, _, _ := runtime.Caller(0)
@@ -75,13 +76,13 @@ func TestWorker(t *testing.T) {
 
 			worker := Worker{}
 			result := Result{}
-			err := worker.Work(gCtx, Task{
-				Flags: TaskFlagALL,
-				Input: TaskInput{
+			err := worker.Work(gCtx, task.Task{
+				Flags: task.TaskFlagALL,
+				Input: task.TaskInput{
 					Bucket: "input",
 					Key:    file,
 				},
-				Output: TaskOutput{
+				Output: task.TaskOutput{
 					Bucket: "output",
 					Prefix: file,
 				},
@@ -105,8 +106,8 @@ func TestWorkerFailed(t *testing.T) {
 	var err error
 	gCtx, cancel := global.WithCancel(global.New(context.Background(), &configure.Config{}))
 
-	gCtx.Inst().RMQ, err = rmq.NewMock()
-	testutil.IsNil(t, err, "kubemq init successful")
+	gCtx.Inst().MessageQueue, err = messagequeue.New(gCtx, messagequeue.ConfigMock{})
+	testutil.IsNil(t, err, "mq init successful")
 	gCtx.Inst().Prometheus = prometheus.New(prometheus.Options{})
 
 	f := map[string]map[string][]byte{
@@ -129,13 +130,13 @@ func TestWorkerFailed(t *testing.T) {
 
 			worker := Worker{}
 			result := Result{}
-			err := worker.Work(gCtx, Task{
-				Flags: TaskFlagALL,
-				Input: TaskInput{
+			err := worker.Work(gCtx, task.Task{
+				Flags: task.TaskFlagALL,
+				Input: task.TaskInput{
 					Bucket: "input",
 					Key:    file,
 				},
-				Output: TaskOutput{
+				Output: task.TaskOutput{
 					Bucket: "output",
 					Prefix: file,
 				},

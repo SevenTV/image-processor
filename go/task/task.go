@@ -1,4 +1,4 @@
-package image_processor
+package task
 
 type TaskFlag int32
 
