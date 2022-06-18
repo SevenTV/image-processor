@@ -25,9 +25,9 @@ type Task struct {
 }
 
 type TaskLimits struct {
-	MaxFrames int `json:"max_frames"`
-	MaxWidth  int `json:"max_width"`
-	MaxHeight int `json:"max_height"`
+	MaxFrameCount int `json:"max_frame_count"`
+	MaxWidth      int `json:"max_width"`
+	MaxHeight     int `json:"max_height"`
 }
 
 type TaskInput struct {
