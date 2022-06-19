@@ -75,7 +75,7 @@ func TestWorker(t *testing.T) {
 			defer wg.Done()
 
 			worker := Worker{}
-			result := Result{}
+			result := task.Result{}
 			err := worker.Work(gCtx, task.Task{
 				Flags: task.TaskFlagALL,
 				Input: task.TaskInput{
@@ -129,7 +129,7 @@ func TestWorkerFailed(t *testing.T) {
 			defer wg.Done()
 
 			worker := Worker{}
-			result := Result{}
+			result := task.Result{}
 			err := worker.Work(gCtx, task.Task{
 				Flags: task.TaskFlagALL,
 				Input: task.TaskInput{

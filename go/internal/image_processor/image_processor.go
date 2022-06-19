@@ -121,9 +121,9 @@ func process(gCtx global.Context, msg *messagequeue.IncomingMessage, workers cha
 	} else {
 		ctx, cancel = global.WithCancel(gCtx)
 	}
-	result := Result{
+	result := task.Result{
 		ID:    t.ID,
-		State: ResultStateFailed,
+		State: task.ResultStateFailed,
 	}
 
 	go func() {
@@ -173,7 +173,7 @@ func process(gCtx global.Context, msg *messagequeue.IncomingMessage, workers cha
 				"error", err,
 			)
 		} else {
-			result.State = ResultStateSuccess
+			result.State = task.ResultStateSuccess
 		}
 
 		if err != nil {

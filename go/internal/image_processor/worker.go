@@ -36,7 +36,7 @@ import (
 
 type Worker struct{}
 
-func (w Worker) Work(ctx global.Context, task task.Task, result *Result) (err error) {
+func (w Worker) Work(ctx global.Context, tsk task.Task, result *task.Result) (err error) {
 	if result == nil {
 		return fmt.Errorf("nil for result")
 	}
@@ -61,7 +61,7 @@ func (w Worker) Work(ctx global.Context, task task.Task, result *Result) (err er
 	defer os.RemoveAll(tmpDir)
 
 	done := ctx.Inst().Prometheus.DownloadFile()
-	raw, match, inputFile, err := w.downloadFile(ctx, task, tmpDir, result)
+	raw, match, inputFile, err := w.downloadFile(ctx, tsk, tmpDir, result)
 	if err != nil {
 		return multierr.Append(fmt.Errorf("failed at download file"), err)
 	}
@@ -78,8 +78,8 @@ func (w Worker) Work(ctx global.Context, task task.Task, result *Result) (err er
 	}
 	done()
 
-	if task.Limits.MaxFrameCount != 0 && len(delays) > task.Limits.MaxFrameCount {
-		return fmt.Errorf("file has too many frames (%d where the limit is %d)", len(delays), task.Limits.MaxFrameCount)
+	if tsk.Limits.MaxFrameCount != 0 && len(delays) > tsk.Limits.MaxFrameCount {
+		return fmt.Errorf("file has too many frames (%d where the limit is %d)", len(delays), tsk.Limits.MaxFrameCount)
 	}
 
 	ctx.Inst().Prometheus.TotalFramesProcessed(len(delays))
@@ -89,19 +89,33 @@ func (w Worker) Work(ctx global.Context, task task.Task, result *Result) (err er
 		return multierr.Append(fmt.Errorf("failed at get width height"), err)
 	}
 
-	if (task.Limits.MaxWidth != 0 && task.Limits.MaxWidth < width) || (task.Limits.MaxHeight != 0 && task.Limits.MaxHeight < height) {
-		return fmt.Errorf("file dimensions are too big (%dx%d where the limit is %dx%d)", width, height, task.Limits.MaxWidth, task.Limits.MaxHeight)
+	if (tsk.Limits.MaxWidth != 0 && tsk.Limits.MaxWidth < width) || (tsk.Limits.MaxHeight != 0 && tsk.Limits.MaxHeight < height) {
+		return fmt.Errorf("file dimensions are too big (%dx%d where the limit is %dx%d)", width, height, tsk.Limits.MaxWidth, tsk.Limits.MaxHeight)
+	}
+
+	h := sha3.New512()
+	_, err = h.Write(raw)
+	if err != nil {
+		return multierr.Append(fmt.Errorf("failed at hash input file"), err)
+	}
+	result.ImageInput = task.ResultImage{
+		SHA3:        hex.EncodeToString(h.Sum(nil)),
+		FrameCount:  len(delays),
+		ContentType: match.MIME.Value,
+		Width:       width,
+		Height:      height,
+		Size:        len(raw),
 	}
 
 	done = ctx.Inst().Prometheus.ResizeFrames()
-	variantsDir, err := w.resizeFrames(ctx, inputDir, tmpDir, task, width, height, delays)
+	variantsDir, err := w.resizeFrames(ctx, inputDir, tmpDir, tsk, width, height, delays)
 	if err != nil {
 		return multierr.Append(fmt.Errorf("failed at resize file"), err)
 	}
 	done()
 
 	done = ctx.Inst().Prometheus.MakeResults()
-	resultsDir, err := w.makeResults(tmpDir, delays, task, variantsDir, ctx, inputDir, inputFile)
+	resultsDir, err := w.makeResults(tmpDir, delays, tsk, variantsDir, ctx, inputDir, inputFile)
 	if err != nil {
 		return multierr.Append(fmt.Errorf("failed at make results"), err)
 	}
@@ -109,7 +123,7 @@ func (w Worker) Work(ctx global.Context, task task.Task, result *Result) (err er
 
 	done = ctx.Inst().Prometheus.UploadResults()
 	if err = multierr.Append(
-		w.uploadResults(tmpDir, resultsDir, variantsDir, task, result, ctx),
+		w.uploadResults(tmpDir, resultsDir, variantsDir, tsk, result, ctx),
 		ctx.Err(),
 	); err != nil {
 		return err
@@ -119,7 +133,7 @@ func (w Worker) Work(ctx global.Context, task task.Task, result *Result) (err er
 	return nil
 }
 
-func (Worker) downloadFile(ctx global.Context, task task.Task, tmpDir string, result *Result) (raw []byte, match types.Type, inputFile string, err error) {
+func (Worker) downloadFile(ctx global.Context, tsk task.Task, tmpDir string, result *task.Result) (raw []byte, match types.Type, inputFile string, err error) {
 	defer func() {
 		if pnk := recover(); pnk != nil {
 			err = multierr.Append(fmt.Errorf("panic at runtime: %v", pnk), err)
@@ -129,8 +143,8 @@ func (Worker) downloadFile(ctx global.Context, task task.Task, tmpDir string, re
 	buf := aws.NewWriteAtBuffer([]byte{})
 
 	err = ctx.Inst().S3.DownloadFile(ctx, buf, &s3.GetObjectInput{
-		Bucket: aws.String(task.Input.Bucket),
-		Key:    aws.String(task.Input.Key),
+		Bucket: aws.String(tsk.Input.Bucket),
+		Key:    aws.String(tsk.Input.Key),
 	})
 	if err != nil {
 		return nil, types.Type{}, "", multierr.Append(fmt.Errorf("failed at s3 download"), err)
@@ -169,17 +183,10 @@ func (Worker) downloadFile(ctx global.Context, task task.Task, tmpDir string, re
 		return nil, types.Type{}, "", multierr.Append(fmt.Errorf("failed at close file"), err)
 	}
 
-	h := sha3.New512()
-	_, err = h.Write(buf.Bytes())
-	if err != nil {
-		return nil, types.Type{}, "", multierr.Append(fmt.Errorf("failed at hash input file"), err)
-	}
-
-	result.InputSHA3 = hex.EncodeToString(h.Sum(nil))
 	return buf.Bytes(), match, inputFile, nil
 }
 
-func (Worker) uploadResults(tmpDir string, resultsDir string, variantsDir string, task task.Task, result *Result, ctx global.Context) (err error) {
+func (Worker) uploadResults(tmpDir string, resultsDir string, variantsDir string, tsk task.Task, result *task.Result, ctx global.Context) (err error) {
 	defer func() {
 		if pnk := recover(); pnk != nil {
 			err = multierr.Append(fmt.Errorf("panic at runtime: %v", pnk), err)
@@ -273,35 +280,24 @@ func (Worker) uploadResults(tmpDir string, resultsDir string, variantsDir string
 		sha3 := hex.EncodeToString(h.Sum(nil))
 
 		t := container.Match(data)
-		key := path.Join(task.Output.Prefix, path.Base(pth))
+		key := path.Join(tsk.Output.Prefix, path.Base(pth))
 		if t == matchers.TypeZip {
-			result.ZipOutput = ResultZipOutput{
+			result.ZipOutput = task.ResultZipOutput{
 				Name:         path.Base(pth),
 				Size:         len(data),
 				Key:          key,
-				Bucket:       task.Output.Bucket,
-				ACL:          task.Output.ACL,
-				CacheControl: task.Output.CacheControl,
+				Bucket:       tsk.Output.Bucket,
+				ACL:          tsk.Output.ACL,
+				CacheControl: tsk.Output.CacheControl,
 				SHA3:         sha3,
 			}
 		} else {
-			var format ResultOutputFormatType
-			switch t {
-			case matchers.TypeGif:
-				format = ResultOutputFormatTypeGIF
-			case matchers.TypePng:
-				format = ResultOutputFormatTypePNG
-			case matchers.TypeWebp:
-				format = ResultOutputFormatTypeWEBP
-			case container.TypeAvif:
-				format = ResultOutputFormatTypeAVIF
-			}
-
 			var (
 				width      int
 				height     int
 				frameCount int
 			)
+
 			switch t {
 			case matchers.TypeGif, matchers.TypePng:
 				output, err := exec.CommandContext(ctx,
@@ -382,27 +378,26 @@ func (Worker) uploadResults(tmpDir string, resultsDir string, variantsDir string
 
 			mtx.Lock()
 			defer mtx.Unlock()
-			result.ImageOutputs = append(result.ImageOutputs, ResultImageOutput{
+			result.ImageOutputs = append(result.ImageOutputs, task.ResultImage{
 				Name:         path.Base(pth),
-				Format:       format,
 				FrameCount:   frameCount,
 				Width:        width,
 				Height:       height,
 				Key:          key,
-				Bucket:       task.Output.Bucket,
+				Bucket:       tsk.Output.Bucket,
 				Size:         len(data),
 				ContentType:  t.MIME.Value,
-				ACL:          task.Output.ACL,
-				CacheControl: task.Output.CacheControl,
+				ACL:          tsk.Output.ACL,
+				CacheControl: tsk.Output.CacheControl,
 				SHA3:         sha3,
 			})
 		}
 
 		if err := ctx.Inst().S3.UploadFile(ctx, &s3manager.UploadInput{
 			Body:         bytes.NewReader(data),
-			ACL:          aws.String(task.Output.ACL),
-			Bucket:       aws.String(task.Output.Bucket),
-			CacheControl: aws.String(task.Output.CacheControl),
+			ACL:          aws.String(tsk.Output.ACL),
+			Bucket:       aws.String(tsk.Output.Bucket),
+			CacheControl: aws.String(tsk.Output.CacheControl),
 			ContentType:  aws.String(t.MIME.Value),
 			Key:          aws.String(key),
 		}); err != nil {

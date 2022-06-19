@@ -49,7 +49,7 @@ func TestRun(t *testing.T) {
 	const TaskID = "batchest-test-123"
 	const CallbackEvent = "image-processor-results"
 
-	task, err := json.Marshal(task.Task{
+	tsk, err := json.Marshal(task.Task{
 		ID:    TaskID,
 		Flags: task.TaskFlagALL,
 		Input: task.TaskInput{
@@ -74,7 +74,7 @@ func TestRun(t *testing.T) {
 	err = gCtx.Inst().MessageQueue.Publish(gCtx, messagequeue.OutgoingMessage{
 		Queue:   jobQueue,
 		Flags:   messagequeue.MessageFlags{},
-		Body:    task,
+		Body:    tsk,
 		Headers: headers,
 	})
 	testutil.IsNil(t, err, "We send a queue message")
@@ -86,14 +86,14 @@ func TestRun(t *testing.T) {
 
 	msg := <-ch
 
-	result := Result{}
+	result := task.Result{}
 	testutil.IsNil(t, json.Unmarshal(msg.Body(), &result), "The response is a result")
 
 	testutil.Assert(t, TaskID, result.ID, "The result is for the task we sent")
 
 	testutil.Assert(t, "", result.Message, "No message was returned")
 
-	testutil.Assert(t, ResultStateSuccess, result.State, "The job processed successfully")
+	testutil.Assert(t, task.ResultStateSuccess, result.State, "The job processed successfully")
 
 	gCtx.Inst().MessageQueue.(*messagequeue.InstanceMock).SetConnected(false)
 
@@ -104,7 +104,7 @@ func TestRun(t *testing.T) {
 	err = gCtx.Inst().MessageQueue.Publish(gCtx, messagequeue.OutgoingMessage{
 		Queue:   jobQueue,
 		Flags:   messagequeue.MessageFlags{},
-		Body:    task,
+		Body:    tsk,
 		Headers: headers,
 	})
 	testutil.IsNil(t, err, "We send a queue message")
@@ -116,12 +116,12 @@ func TestRun(t *testing.T) {
 
 	msg = <-ch
 
-	result = Result{}
+	result = task.Result{}
 	testutil.IsNil(t, json.Unmarshal(msg.Body(), &result), "The response is a result")
 
 	testutil.Assert(t, TaskID, result.ID, "The result is for the task we sent")
 
 	testutil.Assert(t, "", result.Message, "No message was returned")
 
-	testutil.Assert(t, ResultStateSuccess, result.State, "The job processed successfully")
+	testutil.Assert(t, task.ResultStateSuccess, result.State, "The job processed successfully")
 }
