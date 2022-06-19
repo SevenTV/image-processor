@@ -8,10 +8,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/SevenTV/Common/sync_map"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/seventv/common/sync_map"
 	"github.com/seventv/image-processor/go/internal/instance"
 )
 

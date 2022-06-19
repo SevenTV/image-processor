@@ -38,8 +38,6 @@ cloud.google.com/go/storage v1.14.0/go.mod h1:GrKmX003DSIwi9o29oFT7YDnHYwZoctc3f
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
-github.com/SevenTV/Common v0.0.0-20220618115828-08a20e3f0dbf h1:dYxHCRx3NJ3Dm0/1OCOkgo3AWxIr96S2HLDekZKYVw8=
-github.com/SevenTV/Common v0.0.0-20220618115828-08a20e3f0dbf/go.mod h1:k1+/uNULz0uSb6IPHI6G8HJutERV3IzF6i3gVk5hYT0=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
@@ -254,6 +252,8 @@ github.com/rabbitmq/amqp091-go v1.3.4 h1:tXuIslN1nhDqs2t6Jrz3BAoqvt4qIZzxvdbdcxW
 github.com/rabbitmq/amqp091-go v1.3.4/go.mod h1:ogQDLSOACsLPsIq0NpbtiifNZi2YOz0VTJ0kHRghqbM=
 github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
 github.com/rogpeppe/go-internal v1.6.1 h1:/FiVV8dS/e+YqF2JvO3yXRFbBLTIuSDkuC7aBOAvL+k=
+github.com/seventv/common v0.0.0-20220619194424-4013cd50d123 h1:n75aHLrMYVbrsnU+oTpfIX2Y3jNcuYMpZafCs6SIc2I=
+github.com/seventv/common v0.0.0-20220619194424-4013cd50d123/go.mod h1:bnzdJye3QyjqIOlzKg+rzt7py2SGCWgsU6V/OVVAfuc=
 github.com/seventv/message-queue/go v0.0.0-20220619190956-5ba4b3010269 h1:u2vGk/DbH48YLocfVz+joOVYIWt9CdNQciEhFbJJBg4=
 github.com/seventv/message-queue/go v0.0.0-20220619190956-5ba4b3010269/go.mod h1:L1iYDSmltUnxlVGX9RayCoVi3e8aNtFrrLJL6Jv+mrM=
 github.com/sirupsen/logrus v1.2.0/go.mod h1:LxeOpSwHxABJmUn/MG1IvRgCAasNZTLOkJPxbbu5VWo=

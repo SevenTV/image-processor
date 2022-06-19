@@ -3,13 +3,13 @@ module github.com/seventv/image-processor/go
 go 1.18
 
 require (
-	github.com/SevenTV/Common v0.0.0-20220618115828-08a20e3f0dbf
 	github.com/aws/aws-sdk-go v1.44.37
 	github.com/aws/aws-sdk-go-v2 v1.16.5
 	github.com/bugsnag/panicwrap v1.3.4
 	github.com/google/uuid v1.3.0
 	github.com/h2non/filetype v1.1.3
 	github.com/prometheus/client_golang v1.12.2
+	github.com/seventv/common v0.0.0-20220619194424-4013cd50d123
 	github.com/seventv/message-queue/go v0.0.0-20220619190956-5ba4b3010269
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.12.0
