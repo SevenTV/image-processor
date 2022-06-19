@@ -11,8 +11,8 @@ add_executable(dump_png dump_png.cpp)
 target_include_directories(
   dump_png
   PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${WEBP_INCLUDE_DIR} ${OPENCV_INCLUDE_DIRS})
+  PRIVATE ${WebP_INCLUDE_DIRS} ${OPENCV_INCLUDE_DIRS})
 
-target_link_libraries(dump_png WebP::webpdemux WebP::webp ${OpenCV_LIBS} avif)
+target_link_libraries(dump_png ${WebP_LIBRARIES} ${OpenCV_LIBS} avif)
 
 install(TARGETS dump_png)
