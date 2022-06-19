@@ -22,7 +22,7 @@ void syntax()
               << "Options:" << std::endl
               << "  -h,--help                   : Shows syntax help." << std::endl
               << "  --resize-ratio [1-6]        : Resize the ratio." << std::endl
-              << "     1. Stretch (default)" << std::endl
+              << "     1. stretch (default)" << std::endl
               << "     2. left-bottom" << std::endl
               << "     3. right-bottom" << std::endl
               << "     4. left-top" << std::endl
