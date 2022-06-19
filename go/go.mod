@@ -10,7 +10,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/h2non/filetype v1.1.3
 	github.com/prometheus/client_golang v1.12.2
-	github.com/seventv/message-queue/go v0.0.0-20220619185609-3df70d5d8d8f
+	github.com/seventv/message-queue/go v0.0.0-20220619190956-5ba4b3010269
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.12.0
 	github.com/valyala/fasthttp v1.37.0
