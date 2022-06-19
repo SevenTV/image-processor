@@ -14,6 +14,7 @@ struct File {
 struct Output {
     int width;
     int height;
+    int resizeRatio;
     File input;
     std::filesystem::path path;
 };

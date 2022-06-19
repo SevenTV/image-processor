@@ -15,15 +15,28 @@ const (
 	TaskFlagALL TaskFlag = (1 << iota) - 1
 )
 
+type ResizeRatio int32
+
+const (
+	ResizeRatioNothing ResizeRatio = iota
+	ResizeRatioStretch
+	ResizeRatioPaddingRightBottom
+	ResizeRatioPaddingLeftBottom
+	ResizeRatioPaddingRightTop
+	ResizeRatioPaddingLeftTop
+	ResizeRatioPaddingCenter
+)
+
 type Task struct {
-	ID                string     `json:"id"`
-	Flags             TaskFlag   `json:"flags"`
-	Input             TaskInput  `json:"input"`
-	Output            TaskOutput `json:"output"`
-	SmallestMaxWidth  int        `json:"smallest_max_width"`  // 96
-	SmallestMaxHeight int        `json:"smallest_max_height"` // 32
-	Scales            []int      `json:"scales"`              // 1, 2, 3, 4 for 1x, 2x, 3x, 4x
-	Limits            TaskLimits `json:"limits"`
+	ID                string      `json:"id"`
+	Flags             TaskFlag    `json:"flags"`
+	Input             TaskInput   `json:"input"`
+	Output            TaskOutput  `json:"output"`
+	SmallestMaxWidth  int         `json:"smallest_max_width"`  // 96
+	SmallestMaxHeight int         `json:"smallest_max_height"` // 32
+	ResizeRatio       ResizeRatio `json:"resize_ratio"`
+	Scales            []int       `json:"scales"` // 1, 2, 3, 4 for 1x, 2x, 3x, 4x
+	Limits            TaskLimits  `json:"limits"`
 }
 
 type TaskLimits struct {

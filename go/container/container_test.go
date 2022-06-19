@@ -19,7 +19,7 @@ type testCase struct {
 
 func makeCase(t *testing.T, filename string, expected types.Type) testCase {
 	_, cwd, _, _ := runtime.Caller(0)
-	file := path.Join(path.Dir(cwd), "..", "..", "..", "assets", filename)
+	file := path.Join(path.Dir(cwd), "..", "..", "assets", filename)
 
 	return testCase{
 		Filename:     filename,

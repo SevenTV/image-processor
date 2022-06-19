@@ -633,23 +633,27 @@ func (Worker) resizeFrames(ctx global.Context, inputDir string, tmpDir string, t
 		return "", multierr.Append(fmt.Errorf("failed at mkdir variantsDir"), err)
 	}
 
-	smwf := float64(tsk.SmallestMaxWidth)
-	wf := float64(width)
-	smhf := float64(tsk.SmallestMaxHeight)
-	hf := float64(height)
+	if tsk.ResizeRatio == task.ResizeRatioNothing {
+		smwf := float64(tsk.SmallestMaxWidth)
+		wf := float64(width)
+		smhf := float64(tsk.SmallestMaxHeight)
+		hf := float64(height)
 
-	if smwf < wf {
-		hf *= smwf / wf
-		wf = smwf
+		if smwf < wf {
+			hf *= smwf / wf
+			wf = smwf
+		}
+
+		if smhf < hf {
+			wf *= smhf / hf
+			hf = smhf
+		}
+
+		width = int(math.Round(wf))
+		height = int(math.Round(hf))
+
+		tsk.ResizeRatio = task.ResizeRatioStretch
 	}
-
-	if smhf < hf {
-		wf *= smhf / hf
-		hf = smhf
-	}
-
-	width = int(math.Round(wf))
-	height = int(math.Round(hf))
 
 	resizeArgs := []string{}
 	for i := 0; i < len(delays); i++ {
@@ -662,6 +666,7 @@ func (Worker) resizeFrames(ctx global.Context, inputDir string, tmpDir string, t
 
 			resizeArgs = append(resizeArgs,
 				"-r", strconv.Itoa(width), strconv.Itoa(height),
+				"--resize-ratio", fmt.Sprint(tsk.ResizeRatio),
 				"-o", path.Join(variantsDir, fmt.Sprintf("%04d_%dx.png", i, scale)),
 			)
 		}
