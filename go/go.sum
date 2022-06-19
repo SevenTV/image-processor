@@ -254,8 +254,8 @@ github.com/rabbitmq/amqp091-go v1.3.4 h1:tXuIslN1nhDqs2t6Jrz3BAoqvt4qIZzxvdbdcxW
 github.com/rabbitmq/amqp091-go v1.3.4/go.mod h1:ogQDLSOACsLPsIq0NpbtiifNZi2YOz0VTJ0kHRghqbM=
 github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
 github.com/rogpeppe/go-internal v1.6.1 h1:/FiVV8dS/e+YqF2JvO3yXRFbBLTIuSDkuC7aBOAvL+k=
-github.com/seventv/message-queue/go v0.0.0-20220619162123-3e606d28bc20 h1:SMeDzGpv+Zp0yrzwocY3qhA1qpiZSceH7W658QjeeUI=
-github.com/seventv/message-queue/go v0.0.0-20220619162123-3e606d28bc20/go.mod h1:fJvVz8WZsyMK2Liu2VVpDNYk1fnlKxs5pNPVGEWwpeA=
+github.com/seventv/message-queue/go v0.0.0-20220619182645-5bfe7eda4b19 h1:7WEjfGJwQHXqQwBI7mXAs23esFzavbqDd89DAAuWmMk=
+github.com/seventv/message-queue/go v0.0.0-20220619182645-5bfe7eda4b19/go.mod h1:L1iYDSmltUnxlVGX9RayCoVi3e8aNtFrrLJL6Jv+mrM=
 github.com/sirupsen/logrus v1.2.0/go.mod h1:LxeOpSwHxABJmUn/MG1IvRgCAasNZTLOkJPxbbu5VWo=
 github.com/sirupsen/logrus v1.4.2/go.mod h1:tLMulIdttU9McNUspp0xgXVQah82FyeX6MwdIuYE2rE=
 github.com/sirupsen/logrus v1.6.0/go.mod h1:7uNnSEd1DgxDLC74fIahvMZmmYsHGZGEOFrfsX/uA88=
