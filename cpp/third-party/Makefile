@@ -166,4 +166,4 @@ _ffmpeg:
 	(sudo make install || make install)
 
 clean:
-	rm -rf dav1d/build libavif/build libwebp/build gifski/target opencv/build rav1e/target FFmpeg/build
+	rm -rf dav1d/build libavif/build libwebp/build gifski/target opencv/build rav1e/target rav1e/out FFmpeg/build

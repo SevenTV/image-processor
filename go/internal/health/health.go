@@ -28,7 +28,7 @@ func New(gCtx global.Context) <-chan struct{} {
 			mqDown := gCtx.Inst().MessageQueue != nil && !gCtx.Inst().MessageQueue.Connected(lCtx)
 			cancel()
 			if mqDown {
-				zap.S().Warnw("rmq is not connected")
+				zap.S().Warnw("mq is not connected")
 			}
 
 			if gCtx.Inst().S3 != nil {
