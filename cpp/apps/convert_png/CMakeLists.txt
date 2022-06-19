@@ -12,9 +12,8 @@ add_executable(convert_png convert_png.cpp)
 target_include_directories(
   convert_png
   PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${GIFSKI_INCLUDE_DIR} ${WEBP_INCLUDE_DIR} ${OPENCV_INCLUDE_DIRS})
+  PRIVATE ${GIFSKI_INCLUDE_DIR} ${WebP_INCLUDE_DIRS} ${OPENCV_INCLUDE_DIRS})
 
-target_link_libraries(convert_png ${GIFSKI_LIBRARIES} WebP::libwebpmux
-                      WebP::webp avif ${OpenCV_LIBS})
+target_link_libraries(convert_png ${GIFSKI_LIBRARIES} ${WebP_LIBRARIES} avif ${OpenCV_LIBS})
 
 install(TARGETS convert_png)

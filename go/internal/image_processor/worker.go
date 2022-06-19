@@ -3,6 +3,7 @@ package image_processor
 import (
 	"archive/zip"
 	"bytes"
+	"context"
 	"encoding/hex"
 	"fmt"
 	"image/gif"
@@ -26,15 +27,16 @@ import (
 	"github.com/google/uuid"
 	"github.com/h2non/filetype/matchers"
 	"github.com/h2non/filetype/types"
-	"github.com/seventv/image-processor/go/internal/container"
+	"github.com/seventv/image-processor/go/container"
 	"github.com/seventv/image-processor/go/internal/global"
+	"github.com/seventv/image-processor/go/task"
 	"go.uber.org/multierr"
 	"golang.org/x/crypto/sha3"
 )
 
 type Worker struct{}
 
-func (w Worker) Work(ctx global.Context, task Task, result *Result) (err error) {
+func (w Worker) Work(ctx global.Context, task task.Task, result *Result) (err error) {
 	if result == nil {
 		return fmt.Errorf("nil for result")
 	}
@@ -76,10 +78,23 @@ func (w Worker) Work(ctx global.Context, task Task, result *Result) (err error) 
 	}
 	done()
 
+	if task.Limits.MaxFrameCount != 0 && len(delays) > task.Limits.MaxFrameCount {
+		return fmt.Errorf("file has too many frames (%d where the limit is %d)", len(delays), task.Limits.MaxFrameCount)
+	}
+
 	ctx.Inst().Prometheus.TotalFramesProcessed(len(delays))
 
+	width, height, err := w.getWidthHeight(ctx, path.Join(inputDir, "0000.png"))
+	if err != nil {
+		return multierr.Append(fmt.Errorf("failed at get width height"), err)
+	}
+
+	if (task.Limits.MaxWidth != 0 && task.Limits.MaxWidth < width) || (task.Limits.MaxHeight != 0 && task.Limits.MaxHeight < height) {
+		return fmt.Errorf("file dimensions are too big (%dx%d where the limit is %dx%d)", width, height, task.Limits.MaxWidth, task.Limits.MaxHeight)
+	}
+
 	done = ctx.Inst().Prometheus.ResizeFrames()
-	variantsDir, err := w.resizeFrames(ctx, inputDir, tmpDir, task, delays)
+	variantsDir, err := w.resizeFrames(ctx, inputDir, tmpDir, task, width, height, delays)
 	if err != nil {
 		return multierr.Append(fmt.Errorf("failed at resize file"), err)
 	}
@@ -104,7 +119,7 @@ func (w Worker) Work(ctx global.Context, task Task, result *Result) (err error) 
 	return nil
 }
 
-func (Worker) downloadFile(ctx global.Context, task Task, tmpDir string, result *Result) (raw []byte, match types.Type, inputFile string, err error) {
+func (Worker) downloadFile(ctx global.Context, task task.Task, tmpDir string, result *Result) (raw []byte, match types.Type, inputFile string, err error) {
 	defer func() {
 		if pnk := recover(); pnk != nil {
 			err = multierr.Append(fmt.Errorf("panic at runtime: %v", pnk), err)
@@ -164,7 +179,7 @@ func (Worker) downloadFile(ctx global.Context, task Task, tmpDir string, result 
 	return buf.Bytes(), match, inputFile, nil
 }
 
-func (Worker) uploadResults(tmpDir string, resultsDir string, variantsDir string, task Task, result *Result, ctx global.Context) (err error) {
+func (Worker) uploadResults(tmpDir string, resultsDir string, variantsDir string, task task.Task, result *Result, ctx global.Context) (err error) {
 	defer func() {
 		if pnk := recover(); pnk != nil {
 			err = multierr.Append(fmt.Errorf("panic at runtime: %v", pnk), err)
@@ -422,7 +437,7 @@ func (Worker) uploadResults(tmpDir string, resultsDir string, variantsDir string
 	return uploadErr
 }
 
-func (Worker) makeResults(tmpDir string, delays []int, task Task, variantsDir string, ctx global.Context, inputDir string, inputFile string) (resultsDir string, err error) {
+func (Worker) makeResults(tmpDir string, delays []int, tsk task.Task, variantsDir string, ctx global.Context, inputDir string, inputFile string) (resultsDir string, err error) {
 	// Syntax: convert_png [options] -i input.png -o output.webp -o output.gif -o output.avif
 	// Options:
 	//   -h,--help                   : Shows syntax help
@@ -444,7 +459,7 @@ func (Worker) makeResults(tmpDir string, delays []int, task Task, variantsDir st
 	}
 
 	if len(delays) > 1 {
-		for _, scale := range task.Scales {
+		for _, scale := range tsk.Scales {
 			convertArgs := []string{}
 			for i := 0; i < len(delays); i++ {
 
@@ -460,14 +475,14 @@ func (Worker) makeResults(tmpDir string, delays []int, task Task, variantsDir st
 
 			outputs := 0
 
-			if task.Flags&TaskFlagAVIF != 0 {
+			if tsk.Flags&task.TaskFlagAVIF != 0 {
 				convertArgs = append(convertArgs,
 					"-o", path.Join(resultsDir, fmt.Sprintf("%dx.avif", scale)),
 				)
 				outputs++
 			}
 
-			if task.Flags&TaskFlagWEBP != 0 {
+			if tsk.Flags&task.TaskFlagWEBP != 0 {
 				convertArgs = append(convertArgs,
 					"-o", path.Join(resultsDir, fmt.Sprintf("%dx.webp", scale)),
 				)
@@ -476,7 +491,7 @@ func (Worker) makeResults(tmpDir string, delays []int, task Task, variantsDir st
 
 			madeGif := false
 
-			if task.Flags&TaskFlagGIF != 0 {
+			if tsk.Flags&task.TaskFlagGIF != 0 {
 				convertArgs = append(convertArgs,
 					"-o", path.Join(resultsDir, fmt.Sprintf("%dx.gif", scale)),
 				)
@@ -509,7 +524,7 @@ func (Worker) makeResults(tmpDir string, delays []int, task Task, variantsDir st
 		}
 	}
 
-	for _, scale := range task.Scales {
+	for _, scale := range tsk.Scales {
 		convertArgs := []string{
 			"-i", path.Join(variantsDir, fmt.Sprintf("0000_%dx.png", scale)),
 		}
@@ -521,21 +536,21 @@ func (Worker) makeResults(tmpDir string, delays []int, task Task, variantsDir st
 
 		outputs := 0
 
-		if (task.Flags&TaskFlagAVIF_STATIC != 0 && len(delays) > 1) || (task.Flags&TaskFlagAVIF != 0 && len(delays) == 1) {
+		if (tsk.Flags&task.TaskFlagAVIF_STATIC != 0 && len(delays) > 1) || (tsk.Flags&task.TaskFlagAVIF != 0 && len(delays) == 1) {
 			convertArgs = append(convertArgs,
 				"-o", path.Join(resultsDir, fmt.Sprintf("%dx%s.avif", scale, static)),
 			)
 			outputs++
 		}
 
-		if (task.Flags&TaskFlagWEBP_STATIC != 0 && len(delays) > 1) || (task.Flags&TaskFlagWEBP != 0 && len(delays) == 1) {
+		if (tsk.Flags&task.TaskFlagWEBP_STATIC != 0 && len(delays) > 1) || (tsk.Flags&task.TaskFlagWEBP != 0 && len(delays) == 1) {
 			convertArgs = append(convertArgs,
 				"-o", path.Join(resultsDir, fmt.Sprintf("%dx%s.webp", scale, static)),
 			)
 			outputs++
 		}
 
-		if (task.Flags&TaskFlagPNG_STATIC != 0 && len(delays) > 1) || (task.Flags&TaskFlagPNG != 0 && len(delays) == 1) {
+		if (tsk.Flags&task.TaskFlagPNG_STATIC != 0 && len(delays) > 1) || (tsk.Flags&task.TaskFlagPNG != 0 && len(delays) == 1) {
 			if _, err := copyFile(path.Join(variantsDir, fmt.Sprintf("0000_%dx.png", scale)), path.Join(resultsDir, fmt.Sprintf("%dx%s.png", scale, static))); err != nil {
 				return "", multierr.Append(fmt.Errorf("failed at copy png"), err)
 			}
@@ -571,7 +586,34 @@ func (Worker) makeResults(tmpDir string, delays []int, task Task, variantsDir st
 	return resultsDir, nil
 }
 
-func (Worker) resizeFrames(ctx global.Context, inputDir string, tmpDir string, task Task, delays []int) (variantsDir string, err error) {
+func (Worker) getWidthHeight(ctx context.Context, image string) (int, int, error) {
+	out, err := exec.CommandContext(ctx,
+		"ffprobe",
+		"-v", "error",
+		"-select_streams", "v",
+		"-of", "default=noprint_wrappers=1:nokey=1",
+		"-show_entries", "stream=width,height",
+		image,
+	).CombinedOutput()
+	if err != nil {
+		return 0, 0, multierr.Append(fmt.Errorf("failed at ffprobe"), multierr.Append(err, fmt.Errorf("ffprobe failed: %s", out)))
+	}
+
+	widthHeight := strings.SplitN(strings.TrimSpace(utils.B2S(out)), "\n", 2)
+
+	width, err := strconv.Atoi(widthHeight[0])
+	if err != nil {
+		return 0, 0, multierr.Append(fmt.Errorf("failed at parse width"), multierr.Append(err, fmt.Errorf("ffprobe failed: %s", out)))
+	}
+	height, err := strconv.Atoi(widthHeight[1])
+	if err != nil {
+		return 0, 0, multierr.Append(fmt.Errorf("failed at parse height"), multierr.Append(err, fmt.Errorf("ffprobe failed: %s", out)))
+	}
+
+	return width, height, nil
+}
+
+func (Worker) resizeFrames(ctx global.Context, inputDir string, tmpDir string, tsk task.Task, width int, height int, delays []int) (variantsDir string, err error) {
 	// Syntax: resize_png [options] -i input.png -r 100 100 -o out.png -r 50 50 -o out2.png
 	// Options:
 	//	 -h,--help                   : Shows syntax help
@@ -585,70 +627,52 @@ func (Worker) resizeFrames(ctx global.Context, inputDir string, tmpDir string, t
 		}
 	}()
 
-	out, err := exec.CommandContext(ctx,
-		"ffprobe",
-		"-v", "error",
-		"-select_streams", "v",
-		"-of", "default=noprint_wrappers=1:nokey=1",
-		"-show_entries", "stream=width,height",
-		path.Join(inputDir, "0000.png"),
-	).CombinedOutput()
-	if err != nil {
-		return "", multierr.Append(fmt.Errorf("failed at ffprobe"), multierr.Append(err, fmt.Errorf("ffprobe failed: %s", out)))
-	}
-
-	widthHeight := strings.SplitN(strings.TrimSpace(utils.B2S(out)), "\n", 2)
-
-	width, err := strconv.Atoi(widthHeight[0])
-	if err != nil {
-		return "", multierr.Append(fmt.Errorf("failed at parse width"), multierr.Append(err, fmt.Errorf("ffprobe failed: %s", out)))
-	}
-	height, err := strconv.Atoi(widthHeight[1])
-	if err != nil {
-		return "", multierr.Append(fmt.Errorf("failed at parse height"), multierr.Append(err, fmt.Errorf("ffprobe failed: %s", out)))
-	}
-
 	variantsDir = path.Join(tmpDir, "variants")
 	err = os.MkdirAll(variantsDir, 0700)
 	if err != nil {
 		return "", multierr.Append(fmt.Errorf("failed at mkdir variantsDir"), err)
 	}
 
-	smwf := float64(task.SmallestMaxWidth)
-	wf := float64(width)
-	smhf := float64(task.SmallestMaxHeight)
-	hf := float64(height)
+	if tsk.ResizeRatio == task.ResizeRatioNothing {
+		smwf := float64(tsk.SmallestMaxWidth)
+		wf := float64(width)
+		smhf := float64(tsk.SmallestMaxHeight)
+		hf := float64(height)
 
-	if smwf < wf {
-		hf *= smwf / wf
-		wf = smwf
+		if smwf < wf {
+			hf *= smwf / wf
+			wf = smwf
+		}
+
+		if smhf < hf {
+			wf *= smhf / hf
+			hf = smhf
+		}
+
+		width = int(math.Round(wf))
+		height = int(math.Round(hf))
+
+		tsk.ResizeRatio = task.ResizeRatioStretch
 	}
-
-	if smhf < hf {
-		wf *= smhf / hf
-		hf = smhf
-	}
-
-	width = int(math.Round(wf))
-	height = int(math.Round(hf))
 
 	resizeArgs := []string{}
 	for i := 0; i < len(delays); i++ {
 		resizeArgs = append(resizeArgs,
 			"-i", path.Join(inputDir, fmt.Sprintf("%04d.png", i)),
 		)
-		for _, scale := range task.Scales {
+		for _, scale := range tsk.Scales {
 			height := height * scale
 			width := width * scale
 
 			resizeArgs = append(resizeArgs,
 				"-r", strconv.Itoa(width), strconv.Itoa(height),
+				"--resize-ratio", fmt.Sprint(tsk.ResizeRatio),
 				"-o", path.Join(variantsDir, fmt.Sprintf("%04d_%dx.png", i, scale)),
 			)
 		}
 	}
 
-	out, err = exec.CommandContext(ctx,
+	out, err := exec.CommandContext(ctx,
 		"resize_png",
 		resizeArgs...,
 	).CombinedOutput()

@@ -20,13 +20,20 @@ void syntax()
     std::cerr << "Syntax: resize_png [options] -i input.png -r 100 100 -o out.png -r 50 50 -o out2.png"
               << std::endl
               << "Options:" << std::endl
-              << "  -h,--help                   : Shows syntax help" << std::endl
+              << "  -h,--help                   : Shows syntax help." << std::endl
+              << "  --resize-ratio [1-6]        : Resize the ratio." << std::endl
+              << "     1. stretch (default)" << std::endl
+              << "     2. left-bottom" << std::endl
+              << "     3. right-bottom" << std::endl
+              << "     4. left-top" << std::endl
+              << "     5. right-top" << std::endl
+              << "     6. center" << std::endl
               << "  -i,--input FILENAME         : Input file location (supported "
                  "types are png)."
               << std::endl
-              << "  -r,--resize 100 100         : The width and height"
+              << "  -r,--resize 100 100         : The width and height."
               << std::endl
-              << "  -o,--output FILENAME        : Output filename"
+              << "  -o,--output FILENAME        : Output filename."
                  " (supported types are png)."
               << std::endl
               << std::endl;
@@ -38,6 +45,7 @@ int main(int argc, char* argv[])
 
     File currentInput;
     int currentWidth, currentHeight;
+    int resizeRatio = 1;
 
     int argIndex = 1;
     while (argIndex < argc) {
@@ -46,6 +54,14 @@ int main(int argc, char* argv[])
         if (arg == "--help" || arg == "-h") {
             syntax();
             return EXIT_FAILURE;
+        } else if (arg == "--resize-ratio") {
+            NEXTARG();
+
+            resizeRatio = std::stoi(arg);
+            if (resizeRatio <= 0 || resizeRatio > 6) {
+                std::cerr << "Invalid resize ratio: " << arg << std::endl;
+                return EXIT_FAILURE;
+            }
         } else if (arg == "--output" || arg == "-o") {
             if (!currentInput.data.data) {
                 std::cerr << "\"" << arg
@@ -65,10 +81,12 @@ int main(int argc, char* argv[])
             output.input = currentInput;
             output.height = currentHeight;
             output.width = currentWidth;
+            output.resizeRatio = resizeRatio;
 
             currentHeight = 0;
             currentWidth = 0;
             currentInput.used = true;
+            resizeRatio = 1;
 
             outputs.push_back(output);
         } else if (arg == "--input" || arg == "-i") {
@@ -127,8 +145,52 @@ int main(int argc, char* argv[])
     }
 
     for (auto output : outputs) {
-        cv::Mat img;
-        cv::resize(output.input.data, img, cv::Size(output.width, output.height), 0, 0, cv::INTER_NEAREST_EXACT);
+        cv::Mat img = output.input.data;
+        auto newSize = cv::Size(output.width, output.height);
+
+        if (output.resizeRatio != 1) {
+            auto currentSize = output.input.data.size();
+
+            auto currentRatio = currentSize.aspectRatio();
+            auto newRatio = newSize.aspectRatio();
+            if (currentRatio != newRatio) {
+                cv::Mat padded;
+
+                if (currentRatio < newRatio) { // means that width is too small
+                    padded.create(img.rows, int(double(img.rows)*newRatio), img.type());
+                } else { // means that height is too small
+                    padded.create(int(double(img.cols) / newRatio), img.cols, img.type());
+                }
+
+                padded.setTo(cv::Scalar::all(0));
+
+                int x;
+                int y;
+
+                if (output.resizeRatio == 2) {
+                    x = 0;
+                    y = 0;
+                } else if (output.resizeRatio == 3) {
+                    x = padded.cols - img.cols;
+                    y = 0;
+                } else if (output.resizeRatio == 4) {
+                    x = 0;
+                    y = padded.rows - img.rows;
+                } else if (output.resizeRatio == 5) {
+                    x = padded.cols - img.cols;
+                    y = padded.rows - img.rows;
+                } else if (output.resizeRatio == 6) {
+                    x = (padded.cols - img.cols) / 2;
+                    y = (padded.rows - img.rows) / 2;
+                }
+
+                img.copyTo(padded(cv::Rect(x, y, img.cols, img.rows)));
+
+                output.input.data = padded;
+            }
+        }
+
+        cv::resize(output.input.data, img, newSize, 0, 0, cv::INTER_NEAREST_EXACT);
         cv::imwrite(output.path, img);
         img.release();
     }

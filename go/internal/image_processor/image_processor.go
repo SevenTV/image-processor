@@ -1,13 +1,14 @@
 package image_processor
 
 import (
+	"context"
 	"encoding/json"
 	"runtime"
 	"time"
 
 	"github.com/seventv/image-processor/go/internal/global"
-	"github.com/seventv/image-processor/go/internal/instance"
-	"github.com/streadway/amqp"
+	"github.com/seventv/image-processor/go/task"
+	messagequeue "github.com/seventv/message-queue/go"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
@@ -52,8 +53,12 @@ func retryProcess(gCtx global.Context, workers chan Worker, blockers chan struct
 		}
 	}()
 
-	ch, err := gCtx.Inst().RMQ.Subscribe(gCtx, instance.RmqSubscribeRequest{
-		Queue: gCtx.Config().RMQ.JobsQueue,
+	ch, err := gCtx.Inst().MessageQueue.Subscribe(gCtx, messagequeue.Subscription{
+		Queue: gCtx.Config().MessageQueue.JobsQueue,
+		RMQ:   messagequeue.SubscriptionRMQ{},
+		SQS: messagequeue.SubscriptionSQS{
+			WaitTimeSeconds: 10,
+		},
 	})
 	if err != nil {
 		zap.S().Fatalw("failed to start image processor",
@@ -75,7 +80,7 @@ func retryProcess(gCtx global.Context, workers chan Worker, blockers chan struct
 	}
 }
 
-func process(gCtx global.Context, msg amqp.Delivery, workers chan Worker, blockers chan struct{}) {
+func process(gCtx global.Context, msg *messagequeue.IncomingMessage, workers chan Worker, blockers chan struct{}) {
 	defer func() {
 		if err := recover(); err != nil {
 			zap.S().Errorw("panic in process",
@@ -83,22 +88,39 @@ func process(gCtx global.Context, msg amqp.Delivery, workers chan Worker, blocke
 			)
 		}
 	}()
-	t := Task{}
-	if err := json.Unmarshal(msg.Body, &t); err != nil {
-		zap.S().Warnw("bad task payload",
-			"error", multierr.Append(err, msg.Ack(false)),
+
+	t := task.Task{}
+	headers := msg.Headers()
+	if headers.ContentType() == "application/json" {
+		if err := json.Unmarshal(msg.Body(), &t); err != nil {
+			zap.S().Warnw("bad task payload",
+				"error", multierr.Append(err, msg.Ack(gCtx)),
+			)
+			return
+		}
+	} else {
+		zap.S().Warnw("bad task content-type",
+			"error", msg.Ack(gCtx),
 		)
-		return
 	}
 
 	zap.S().Infow("new message",
 		"id", t.ID,
-		"msg_id", msg.MessageId,
+		"msg_id", msg.ID(),
 	)
 
 	worker := <-workers
 
-	ctx, cancel := global.WithCancel(gCtx)
+	var (
+		ctx    global.Context
+		cancel context.CancelFunc
+	)
+
+	if t.Limits.MaxProcessingTime != 0 {
+		ctx, cancel = global.WithTimeout(gCtx, t.Limits.MaxProcessingTime)
+	} else {
+		ctx, cancel = global.WithCancel(gCtx)
+	}
 	result := Result{
 		ID:    t.ID,
 		State: ResultStateFailed,
@@ -118,20 +140,35 @@ func process(gCtx global.Context, msg amqp.Delivery, workers chan Worker, blocke
 
 			zap.S().Infow("finished",
 				"id", t.ID,
-				"msg_id", msg.MessageId,
+				"msg_id", msg.ID(),
 				"run_duration", result.FinishedAt.Sub(result.StartedAt),
 				"state", result.State,
 				"message", result.Message,
 			)
 		}()
+		go func() {
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-time.After(time.Second * 15):
+					if err := msg.Extend(ctx, time.Second*30); err != nil && err != messagequeue.ErrUnimplemented {
+						zap.S().Errorw("task failed to extend lease",
+							"error", err,
+						)
+						cancel()
+					}
+				}
+			}
+		}()
 
 		err := worker.Work(ctx, t, &result)
 		if err != nil {
-			err = multierr.Append(err, msg.Reject(false))
+			err = multierr.Append(err, msg.Nack(gCtx))
 			zap.S().Errorw("task processing failed",
 				"error", err,
 			)
-		} else if err = msg.Ack(false); err != nil {
+		} else if err = msg.Ack(gCtx); err != nil {
 			zap.S().Errorw("failed to ack task",
 				"error", err,
 			)
@@ -143,20 +180,23 @@ func process(gCtx global.Context, msg amqp.Delivery, workers chan Worker, blocke
 			result.Message = err.Error()
 		}
 
-		if msg.ReplyTo != "" {
+		if headers.ReplyTo() != "" {
 			resultData, err := json.Marshal(result)
 			if err != nil {
 				zap.S().Errorw("failed to marshal result",
 					"error", err,
 				)
 			} else {
-				if err := gCtx.Inst().RMQ.Publish(instance.RmqPublishRequest{
-					RoutingKey: msg.ReplyTo,
-					Publishing: amqp.Publishing{
-						ContentType:  "application/json",
-						DeliveryMode: amqp.Persistent,
-						Body:         resultData,
-						Timestamp:    time.Now(),
+				if err := gCtx.Inst().MessageQueue.Publish(ctx, messagequeue.OutgoingMessage{
+					Queue: headers.ReplyTo(),
+					Body:  resultData,
+					Flags: messagequeue.MessageFlags{
+						ContentType: "application/json",
+						Timestamp:   time.Now(),
+						RMQ: messagequeue.MessageFlagsRMQ{
+							DeliveryMode: messagequeue.RMQDeliveryModePersistent,
+						},
+						SQS: messagequeue.MessageFlagsSQS{},
 					},
 				}); err != nil {
 					zap.S().Errorw("failed to publish result",

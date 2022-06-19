@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/bugsnag/panicwrap"
 	"github.com/seventv/image-processor/go/internal/configure"
 	"github.com/seventv/image-processor/go/internal/global"
@@ -18,8 +19,8 @@ import (
 	"github.com/seventv/image-processor/go/internal/image_processor"
 	"github.com/seventv/image-processor/go/internal/monitoring"
 	"github.com/seventv/image-processor/go/internal/svc/prometheus"
-	"github.com/seventv/image-processor/go/internal/svc/rmq"
 	"github.com/seventv/image-processor/go/internal/svc/s3"
+	messagequeue "github.com/seventv/message-queue/go"
 	"go.uber.org/zap"
 )
 
@@ -71,11 +72,26 @@ func main() {
 	gCtx, cancel := global.WithCancel(global.New(context.Background(), config))
 
 	{
-		gCtx.Inst().RMQ, err = rmq.New(gCtx, rmq.Options{
-			URI: config.RMQ.URI,
-		})
+		switch config.MessageQueue.Mode {
+		case configure.MessageQueueModeRMQ:
+			gCtx.Inst().MessageQueue, err = messagequeue.New(gCtx, messagequeue.ConfigRMQ{
+				AmqpURI:              config.MessageQueue.RMQ.URI,
+				MaxReconnectAttempts: config.MessageQueue.RMQ.MaxReconnectAttempts,
+			})
+		case configure.MessageQueueModeSQS:
+			gCtx.Inst().MessageQueue, err = messagequeue.New(gCtx, messagequeue.ConfigSQS{
+				Region: config.MessageQueue.SQS.Region,
+				Credentials: aws.CredentialsProviderFunc(func(ctx context.Context) (aws.Credentials, error) {
+					return aws.Credentials{
+						AccessKeyID:     config.MessageQueue.SQS.AccessToken,
+						SecretAccessKey: config.MessageQueue.SQS.SecretKey,
+					}, nil
+				}),
+				RetryMaxAttempts: config.MessageQueue.SQS.MaxRetryAttempts,
+			})
+		}
 		if err != nil {
-			zap.S().Fatalw("failed to setup rmq handler",
+			zap.S().Fatalw("failed to setup mq handler",
 				"error", err,
 			)
 		}
