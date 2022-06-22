@@ -96,12 +96,16 @@ func process(gCtx global.Context, msg *messagequeue.IncomingMessage, workers cha
 			zap.S().Warnw("bad task payload",
 				"error", multierr.Append(err, msg.Ack(gCtx)),
 			)
+
 			return
 		}
 	} else {
 		zap.S().Warnw("bad task content-type",
 			"error", msg.Ack(gCtx),
+			"content-type", headers.ContentType(),
 		)
+
+		return
 	}
 
 	zap.S().Infow("new message",
