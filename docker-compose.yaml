@@ -1,0 +1,9 @@
+services:
+  proc:
+    build:
+      context: .
+    volumes:
+      - ./config.yaml:/app/config.yaml
+      - ./out:/tmp/image-processor
+    extra_hosts:
+        host.docker.internal: host-gateway

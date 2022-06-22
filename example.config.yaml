@@ -1,0 +1,39 @@
+level: info
+
+# Worker preferences
+worker:
+  jobs: 32
+  temp_dir: "/tmp/image-processor"
+
+# Health check
+health:
+  bind: 7701
+  enabled: true
+
+# Connection details to the message queue service
+message_queue:
+  mode: "RMQ" # Either "RMQ" or "SQS"
+  jobs_queue: "seventv_images_jobs"
+  rmq:
+    uri: "amqp://app:foobar@localhost:5672"
+    max_reconnect_attempts: 25
+  sqs:
+    region: "us-east-1"
+    access_token: ""
+    secret_key: ""
+    max_retry_attempts: 25
+
+# Connection details for S3 API
+s3:
+  region: "us-east-1"
+  endpoint: ""
+  access_token: ""
+  secret_key: ""
+
+# Monitoring Settings
+monitoring:
+  bind: 7702
+  enabled: false
+  labels:
+    - key: "foo"
+      value: "bar"
