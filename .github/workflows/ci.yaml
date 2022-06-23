@@ -61,6 +61,13 @@ jobs:
         run: |
           echo "::set-output name=go-build::$(go env GOCACHE)"
           echo "::set-output name=go-mod::$(go env GOMODCACHE)"
+          echo "::set-output name=pwd::$(pwd)"
+
+      - name: External Build Cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.cache-paths.outputs.pwd }}/cpp/third-party/build
+          key: ${{ runner.os }}-external-build
 
       - name: Go Build Cache
         uses: actions/cache@v3
@@ -91,7 +98,13 @@ jobs:
         with:
           rust-version: stable
 
-      - name: Install Deps
+      - name: Install Development Dependencies
+        run: make dev_deps
+
+      - name: Run Linter
+        run: make lint
+
+      - name: Install Dependencies
         run: |
           sudo apt-get install \
               ca-certificates \
@@ -115,14 +128,11 @@ jobs:
               gifsicle \
               optipng
 
-      - name: Install Developer Dependencies
-        run: make dev_deps
+      - name: Compile External Dependencies
+        run: make -C cpp external
 
-      - name: Generate structures
-        run: make generate
-
-      - name: Run Linter
-        run: make lint
+      - name: Build CPP Applications
+        run: make -C cpp build
 
       - name: Run Tests
         run: make test

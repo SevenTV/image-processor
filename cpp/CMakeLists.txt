@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.13)
 
 link_directories(${CMAKE_SOURCE_DIR}/out/lib)
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake ${CMAKE_SOURCE_DIR}/out/share/WebP/cmake)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake
+     ${CMAKE_SOURCE_DIR}/out/share/WebP/cmake)
 list(APPEND CMAKE_PREFIX_PATH ${CMAKE_SOURCE_DIR}/out)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)

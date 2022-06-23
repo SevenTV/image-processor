@@ -13,12 +13,12 @@ clean:
 	rm -rf build
 
 lint:
-	find . -regex '.*\.\(cpp\|hpp\|cc\|cxx\|c\|h\)' -not -path "./build/*" -not -path "./third-party/*" -exec clang-format -style=file --Werror --dry-run {} \;
-	find . -regex '.*\(CMakeLists.txt\|\.cmake\)' -not -path "./build/*" -not -path "./third-party/*" -exec cmake-format --check {} \;
+	find . -regex '.*\.\(cpp\|hpp\|cc\|cxx\|c\|h\)' -not -path "./build/*" -not -path "./third-party/*" -not -path "./out/*" -exec clang-format -style=file --Werror --dry-run {} \;
+	find . -regex '.*\(CMakeLists.txt\|\.cmake\)' -not -path "./build/*" -not -path "./third-party/*" -not -path "./out/*" -exec cmake-format --check {} \;
 
 format:
-	find . -regex '.*\.\(cpp\|hpp\|cc\|cxx\|c\|h\)' -not -path "./build/*" -not -path "./third-party/*" -exec clang-format -style=file -i {} \;
-	find . -regex '.*\(CMakeLists.txt\|\.cmake\)' -not -path "./build/*" -not -path "./third-party/*" -exec cmake-format -i {} \;
+	find . -regex '.*\.\(cpp\|hpp\|cc\|cxx\|c\|h\)' -not -path "./build/*" -not -path "./third-party/*" -not -path "./out/*" -exec clang-format -style=file -i {} \;
+	find . -regex '.*\(CMakeLists.txt\|\.cmake\)' -not -path "./build/*" -not -path "./third-party/*" -not -path "./out/*" -exec cmake-format -i {} \;
 
 external:
 	$(MAKE) -C third-party all
