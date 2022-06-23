@@ -76,12 +76,12 @@ FROM $BASE_IMG as deps
     RUN apt-get update && \
         apt-get install -y \
             libpng16-16 \
-            libvpx7 \
-            libx264-163 \
-            libx265-199 \
+            libvpx6 \
+            libx264-155 \
+            libx265-179 \
             libopenjp2-7 \
             openssl \
-            libssl3 \
+            libssl1.1 \
             gifsicle \
             optipng && \
         apt-get autoremove -y && \
