@@ -10,7 +10,7 @@ require (
 	github.com/h2non/filetype v1.1.3
 	github.com/prometheus/client_golang v1.12.2
 	github.com/seventv/common v0.0.0-20220619194424-4013cd50d123
-	github.com/seventv/message-queue/go v0.0.0-20220623152952-374de8fbe5ac
+	github.com/seventv/message-queue/go v0.0.0-20220623223012-800919900c0d
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.12.0
 	github.com/valyala/fasthttp v1.37.0
