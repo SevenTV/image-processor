@@ -21,7 +21,7 @@ RUN apt-get update && \
 
 COPY cpp/out/lib /usr/local/lib
 COPY cpp/out/bin /usr/local/bin
-COPY go/out image_processor
+COPY go/out/image_processor image_processor
 
 RUN ldconfig
 
