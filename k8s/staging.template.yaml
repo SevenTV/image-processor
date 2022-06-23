@@ -95,6 +95,11 @@ data:
     monitoring:
       bind: 0.0.0.0:9100
       enabled: true
+    message_queue:
+      rmq:
+        max_reconnect_attempts: 10
+      sqs:
+        max_retry_attempts: 10
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
