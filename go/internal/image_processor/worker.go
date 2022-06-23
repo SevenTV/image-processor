@@ -40,20 +40,23 @@ func (w Worker) Work(ctx global.Context, tsk task.Task, result *task.Result) (er
 	if result == nil {
 		return fmt.Errorf("nil for result")
 	}
-	finish := ctx.Inst().Prometheus.StartTask()
 
+	finish := ctx.Inst().Prometheus.StartTask()
 	result.StartedAt = time.Now()
+
 	defer func() {
 		if pnk := recover(); pnk != nil {
 			err = multierr.Append(fmt.Errorf("panic at runtime: %v", pnk), err)
 		}
 
 		result.FinishedAt = time.Now()
+
 		finish(err == nil)
 	}()
 
 	id := uuid.New().String()
 	tmpDir := path.Join(ctx.Config().Worker.TempDir, id)
+
 	if err := os.MkdirAll(tmpDir, 0700); err != nil {
 		return err
 	}
@@ -61,10 +64,12 @@ func (w Worker) Work(ctx global.Context, tsk task.Task, result *task.Result) (er
 	defer os.RemoveAll(tmpDir)
 
 	done := ctx.Inst().Prometheus.DownloadFile()
+
 	raw, match, inputFile, err := w.downloadFile(ctx, tsk, tmpDir, result)
 	if err != nil {
 		return multierr.Append(fmt.Errorf("failed at download file"), err)
 	}
+
 	done()
 
 	ctx.Inst().Prometheus.InputFileType(match.MIME.Value)
@@ -72,10 +77,12 @@ func (w Worker) Work(ctx global.Context, tsk task.Task, result *task.Result) (er
 	ctx.Inst().Prometheus.TotalBytesDownloaded(len(raw))
 
 	done = ctx.Inst().Prometheus.ExportFrames()
+
 	delays, inputDir, err := w.exportFrames(ctx, tmpDir, inputFile, match, raw)
 	if err != nil {
 		return multierr.Append(fmt.Errorf("failed at export frames"), err)
 	}
+
 	done()
 
 	if tsk.Limits.MaxFrameCount != 0 && len(delays) > tsk.Limits.MaxFrameCount {
@@ -94,10 +101,12 @@ func (w Worker) Work(ctx global.Context, tsk task.Task, result *task.Result) (er
 	}
 
 	h := sha3.New512()
+
 	_, err = h.Write(raw)
 	if err != nil {
 		return multierr.Append(fmt.Errorf("failed at hash input file"), err)
 	}
+
 	result.ImageInput = task.ResultImage{
 		SHA3:        hex.EncodeToString(h.Sum(nil)),
 		FrameCount:  len(delays),
@@ -108,26 +117,32 @@ func (w Worker) Work(ctx global.Context, tsk task.Task, result *task.Result) (er
 	}
 
 	done = ctx.Inst().Prometheus.ResizeFrames()
+
 	variantsDir, err := w.resizeFrames(ctx, inputDir, tmpDir, tsk, width, height, delays)
 	if err != nil {
 		return multierr.Append(fmt.Errorf("failed at resize file"), err)
 	}
+
 	done()
 
 	done = ctx.Inst().Prometheus.MakeResults()
+
 	resultsDir, err := w.makeResults(tmpDir, delays, tsk, variantsDir, ctx, inputDir, inputFile)
 	if err != nil {
 		return multierr.Append(fmt.Errorf("failed at make results"), err)
 	}
+
 	done()
 
 	done = ctx.Inst().Prometheus.UploadResults()
+
 	if err = multierr.Append(
 		w.uploadResults(tmpDir, resultsDir, variantsDir, tsk, result, ctx),
 		ctx.Err(),
 	); err != nil {
 		return err
 	}
+
 	done()
 
 	return nil
@@ -168,6 +183,7 @@ func (Worker) downloadFile(ctx global.Context, tsk task.Task, tmpDir string, res
 	}
 
 	inputFile = path.Join(tmpDir, fmt.Sprintf("input.%s", match.Extension))
+
 	file, err := os.Create(inputFile)
 	if err != nil {
 		return nil, types.Type{}, "", multierr.Append(fmt.Errorf("failed at create dir"), err)
@@ -194,6 +210,7 @@ func (Worker) uploadResults(tmpDir string, resultsDir string, variantsDir string
 	}()
 
 	zipFilePath := path.Join(tmpDir, "emote.zip")
+
 	zipFile, err := os.Create(zipFilePath)
 	if err != nil {
 		return multierr.Append(fmt.Errorf("failed at create zip file"), err)
@@ -249,29 +266,37 @@ func (Worker) uploadResults(tmpDir string, resultsDir string, variantsDir string
 		uploadErr error
 		mtx       sync.Mutex
 	)
+
 	uploadPath := func(pth string) {
 		defer wg.Done()
 		defer func() {
 			if pnk := recover(); pnk != nil {
 				mtx.Lock()
 				defer mtx.Unlock()
+
 				uploadErr = multierr.Append(fmt.Errorf("panic at runtime: %v", pnk), err)
 			}
 		}()
 
 		h := sha3.New512()
+
 		data, err := os.ReadFile(pth)
 		if err != nil {
 			mtx.Lock()
 			defer mtx.Unlock()
+
 			uploadErr = multierr.Append(fmt.Errorf("failed at readfile %s", pth), multierr.Append(err, uploadErr))
+
 			return
 		}
+
 		_, err = h.Write(data)
 		if err != nil {
 			mtx.Lock()
 			defer mtx.Unlock()
+
 			uploadErr = multierr.Append(fmt.Errorf("failed at hash data"), multierr.Append(err, uploadErr))
+
 			return
 		}
 
@@ -279,8 +304,9 @@ func (Worker) uploadResults(tmpDir string, resultsDir string, variantsDir string
 
 		sha3 := hex.EncodeToString(h.Sum(nil))
 
-		t := container.Match(data)
 		key := path.Join(tsk.Output.Prefix, path.Base(pth))
+
+		t := container.Match(data)
 		if t == matchers.TypeZip {
 			result.ZipOutput = task.ResultZipOutput{
 				Name:         path.Base(pth),
@@ -429,6 +455,7 @@ func (Worker) uploadResults(tmpDir string, resultsDir string, variantsDir string
 	uploadPath(zipFilePath)
 
 	wg.Wait()
+
 	return uploadErr
 }
 
@@ -440,7 +467,6 @@ func (Worker) makeResults(tmpDir string, delays []int, tsk task.Task, variantsDi
 	//   -o,--output FILENAME        : Output file location (supported types are webp, avif, gif).
 	//   -d,--delay D                : Delay of the next frame in 100s of a second. (default 4 = 40ms)
 	// the max fps is 50fps
-
 	defer func() {
 		if pnk := recover(); pnk != nil {
 			err = multierr.Append(fmt.Errorf("panic at runtime: %v", pnk), err)
@@ -448,6 +474,7 @@ func (Worker) makeResults(tmpDir string, delays []int, tsk task.Task, variantsDi
 	}()
 
 	resultsDir = path.Join(tmpDir, "results")
+
 	err = os.MkdirAll(resultsDir, 0700)
 	if err != nil {
 		return "", multierr.Append(fmt.Errorf("failed at mkdir resultsDir"), err)
@@ -456,8 +483,8 @@ func (Worker) makeResults(tmpDir string, delays []int, tsk task.Task, variantsDi
 	if len(delays) > 1 {
 		for _, scale := range tsk.Scales {
 			convertArgs := []string{}
-			for i := 0; i < len(delays); i++ {
 
+			for i := 0; i < len(delays); i++ {
 				if delays[i] <= 1 {
 					delays[i] = 2
 				}
@@ -502,8 +529,8 @@ func (Worker) makeResults(tmpDir string, delays []int, tsk task.Task, variantsDi
 				if err != nil {
 					return "", multierr.Append(fmt.Errorf("failed at convert_png"), multierr.Append(err, fmt.Errorf("convert_png failed: %s", out)))
 				}
-
 			}
+
 			if madeGif {
 				out, err := exec.CommandContext(ctx,
 					"gifsicle",
@@ -578,6 +605,7 @@ func (Worker) makeResults(tmpDir string, delays []int, tsk task.Task, variantsDi
 	if err = os.RemoveAll(inputFile); err != nil {
 		return "", multierr.Append(fmt.Errorf("failed at rmdir inputFile"), err)
 	}
+
 	return resultsDir, nil
 }
 
@@ -600,6 +628,7 @@ func (Worker) getWidthHeight(ctx context.Context, image string) (int, int, error
 	if err != nil {
 		return 0, 0, multierr.Append(fmt.Errorf("failed at parse width"), multierr.Append(err, fmt.Errorf("ffprobe failed: %s", out)))
 	}
+
 	height, err := strconv.Atoi(widthHeight[1])
 	if err != nil {
 		return 0, 0, multierr.Append(fmt.Errorf("failed at parse height"), multierr.Append(err, fmt.Errorf("ffprobe failed: %s", out)))
@@ -615,7 +644,6 @@ func (Worker) resizeFrames(ctx global.Context, inputDir string, tmpDir string, t
 	//	 -i,--input FILENAME         : Input file location (supported types are png).
 	//	 -r,--resize 100 100         : The width and height
 	//	 -o,--output FILENAME        : Output filename (supported types are png).
-
 	defer func() {
 		if pnk := recover(); pnk != nil {
 			err = multierr.Append(fmt.Errorf("panic at runtime: %v", pnk), err)
@@ -623,6 +651,7 @@ func (Worker) resizeFrames(ctx global.Context, inputDir string, tmpDir string, t
 	}()
 
 	variantsDir = path.Join(tmpDir, "variants")
+
 	err = os.MkdirAll(variantsDir, 0700)
 	if err != nil {
 		return "", multierr.Append(fmt.Errorf("failed at mkdir variantsDir"), err)
@@ -655,6 +684,7 @@ func (Worker) resizeFrames(ctx global.Context, inputDir string, tmpDir string, t
 		resizeArgs = append(resizeArgs,
 			"-i", path.Join(inputDir, fmt.Sprintf("%04d.png", i)),
 		)
+
 		for _, scale := range tsk.Scales {
 			height := height * scale
 			width := width * scale
@@ -685,7 +715,6 @@ func (Worker) exportFrames(ctx global.Context, tmpDir string, inputFile string, 
 	//	 -i,--input FILENAME         : Input file location (supported types are webp and avif).
 	//	 -o,--output FOLDER          : Output folder
 	//	 --info                      : Only output info dont dump the images
-
 	defer func() {
 		if pnk := recover(); pnk != nil {
 			err = multierr.Append(fmt.Errorf("panic at runtime: %v", pnk), err)
@@ -693,6 +722,7 @@ func (Worker) exportFrames(ctx global.Context, tmpDir string, inputFile string, 
 	}()
 
 	inputDir = path.Join(tmpDir, "input")
+
 	err = os.MkdirAll(inputDir, 0700)
 	if err != nil {
 		return nil, "", multierr.Append(fmt.Errorf("failed at mkdir inputDir"), err)
@@ -715,10 +745,12 @@ func (Worker) exportFrames(ctx global.Context, tmpDir string, inputFile string, 
 			line = strings.TrimSpace(line)
 			if line != "" {
 				splits := strings.SplitN(line, ",", 2)
+
 				delay, err := strconv.Atoi(splits[1])
 				if err != nil {
 					return nil, "", multierr.Append(fmt.Errorf("failed at parse delay"), multierr.Append(err, fmt.Errorf("dump_png failed: %s", out)))
 				}
+
 				delays = append(delays, delay)
 			}
 		}
@@ -781,10 +813,12 @@ func (Worker) exportFrames(ctx global.Context, tmpDir string, inputFile string, 
 				}
 
 				fpsArr := strings.SplitN(strings.TrimSpace(utils.B2S(out)), "/", 2)
+
 				numerator, err := strconv.Atoi(fpsArr[0])
 				if err != nil {
 					return nil, "", multierr.Append(fmt.Errorf("failed at parse numerator fps"), multierr.Append(err, fmt.Errorf("ffprobe failed: %s", out)))
 				}
+
 				denominator, err := strconv.Atoi(fpsArr[1])
 				if err != nil {
 					return nil, "", multierr.Append(fmt.Errorf("failed at parse denominator fps"), multierr.Append(err, fmt.Errorf("ffprobe failed: %s", out)))
@@ -822,7 +856,9 @@ func copyFile(src, dst string) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
+
 	defer destination.Close()
 	nBytes, err := io.Copy(destination, source)
+
 	return nBytes, err
 }

@@ -43,10 +43,12 @@ func TestWorker(t *testing.T) {
 	t.Parallel()
 
 	var err error
+
 	gCtx, cancel := global.WithCancel(global.New(context.Background(), &configure.Config{}))
 
 	gCtx.Inst().MessageQueue, err = messagequeue.New(gCtx, messagequeue.ConfigMock{})
 	testutil.IsNil(t, err, "mq init successful")
+
 	gCtx.Inst().Prometheus = prometheus.New(prometheus.Options{})
 
 	_, cwd, _, _ := runtime.Caller(0)
@@ -104,10 +106,12 @@ func TestWorkerFailed(t *testing.T) {
 	t.Parallel()
 
 	var err error
+
 	gCtx, cancel := global.WithCancel(global.New(context.Background(), &configure.Config{}))
 
 	gCtx.Inst().MessageQueue, err = messagequeue.New(gCtx, messagequeue.ConfigMock{})
 	testutil.IsNil(t, err, "mq init successful")
+
 	gCtx.Inst().Prometheus = prometheus.New(prometheus.Options{})
 
 	f := map[string]map[string][]byte{

@@ -86,6 +86,7 @@ func (m *Instance) Register(r prometheus.Registerer) {
 
 func (m *Instance) StartTask() func(success bool) {
 	start := time.Now()
+
 	m.currentTasks.Inc()
 
 	return func(success bool) {
@@ -94,6 +95,7 @@ func (m *Instance) StartTask() func(success bool) {
 		} else {
 			m.totalTasks.With(prometheus.Labels{"state": "failed"}).Inc()
 		}
+
 		m.currentTasks.Dec()
 		m.taskDurationSeconds.With(prometheus.Labels{"action": "complete"}).Observe(float64(time.Since(start)/time.Millisecond) / 1000)
 	}

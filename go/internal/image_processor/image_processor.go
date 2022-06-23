@@ -21,8 +21,10 @@ func Run(gCtx global.Context) {
 
 	workers := make(chan Worker, jobCount)
 	blockers := make(chan struct{}, jobCount-1)
+
 	for i := 0; i < jobCount; i++ {
 		workers <- Worker{}
+
 		if i != 0 {
 			blockers <- struct{}{}
 		}
@@ -64,8 +66,10 @@ func retryProcess(gCtx global.Context, workers chan Worker, blockers chan struct
 		zap.S().Fatalw("failed to start image processor",
 			"error", err,
 		)
+
 		return
 	}
+
 	for {
 		select {
 		case <-gCtx.Done():
@@ -91,6 +95,7 @@ func process(gCtx global.Context, msg *messagequeue.IncomingMessage, workers cha
 
 	t := task.Task{}
 	headers := msg.Headers()
+
 	if headers.ContentType() == "application/json" {
 		if err := json.Unmarshal(msg.Body(), &t); err != nil {
 			zap.S().Warnw("bad task payload",
@@ -125,6 +130,7 @@ func process(gCtx global.Context, msg *messagequeue.IncomingMessage, workers cha
 	} else {
 		ctx, cancel = global.WithCancel(gCtx)
 	}
+
 	result := task.Result{
 		ID:    t.ID,
 		State: task.ResultStateFailed,
@@ -150,6 +156,7 @@ func process(gCtx global.Context, msg *messagequeue.IncomingMessage, workers cha
 				"message", result.Message,
 			)
 		}()
+
 		go func() {
 			for {
 				select {

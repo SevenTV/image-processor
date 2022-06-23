@@ -19,8 +19,6 @@ build:
 	GOOS=linux GOARCH=amd64 go build -v -ldflags "-X 'main.Version=${VERSION}' -X 'main.Unix=$(shell date +%s)' -X 'main.User=${BUILDER}'" -o out/image_processor cmd/*.go
 
 lint:
-	staticcheck ./...
-	go vet ./...
 	golangci-lint run
 
 format:
@@ -30,7 +28,6 @@ deps:
 	go mod download
 
 dev_deps:
-	go install honnef.co/go/tools/cmd/staticcheck@v0.3.1
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@master # TODO fix this version, currently master to lint go1.18 files
 
 test:
