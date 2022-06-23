@@ -31,6 +31,7 @@ import (
 	"github.com/seventv/image-processor/go/internal/global"
 	"github.com/seventv/image-processor/go/task"
 	"go.uber.org/multierr"
+	"go.uber.org/zap"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -40,6 +41,10 @@ func (w Worker) Work(ctx global.Context, tsk task.Task, result *task.Result) (er
 	if result == nil {
 		return fmt.Errorf("nil for result")
 	}
+
+	zap.S().Debugw("starting new task",
+		"task_id", tsk.ID,
+	)
 
 	finish := ctx.Inst().Prometheus.StartTask()
 	result.StartedAt = time.Now()
@@ -61,6 +66,11 @@ func (w Worker) Work(ctx global.Context, tsk task.Task, result *task.Result) (er
 		return err
 	}
 
+	zap.S().Debugw("made tmp dir",
+		"tmp_id", id,
+		"task_id", tsk.ID,
+	)
+
 	defer os.RemoveAll(tmpDir)
 
 	done := ctx.Inst().Prometheus.DownloadFile()
@@ -69,6 +79,10 @@ func (w Worker) Work(ctx global.Context, tsk task.Task, result *task.Result) (er
 	if err != nil {
 		return multierr.Append(fmt.Errorf("failed at download file"), err)
 	}
+
+	zap.S().Debugw("downloaded file",
+		"task_id", tsk.ID,
+	)
 
 	done()
 
@@ -83,6 +97,11 @@ func (w Worker) Work(ctx global.Context, tsk task.Task, result *task.Result) (er
 		return multierr.Append(fmt.Errorf("failed at export frames"), err)
 	}
 
+	zap.S().Debugw("exported frames",
+		"frame_count", len(delays),
+		"task_id", tsk.ID,
+	)
+
 	done()
 
 	if tsk.Limits.MaxFrameCount != 0 && len(delays) > tsk.Limits.MaxFrameCount {
@@ -95,6 +114,12 @@ func (w Worker) Work(ctx global.Context, tsk task.Task, result *task.Result) (er
 	if err != nil {
 		return multierr.Append(fmt.Errorf("failed at get width height"), err)
 	}
+
+	zap.S().Debugw("calculated width and height",
+		"width", width,
+		"height", height,
+		"task_id", tsk.ID,
+	)
 
 	if (tsk.Limits.MaxWidth != 0 && tsk.Limits.MaxWidth < width) || (tsk.Limits.MaxHeight != 0 && tsk.Limits.MaxHeight < height) {
 		return fmt.Errorf("file dimensions are too big (%dx%d where the limit is %dx%d)", width, height, tsk.Limits.MaxWidth, tsk.Limits.MaxHeight)
@@ -123,6 +148,11 @@ func (w Worker) Work(ctx global.Context, tsk task.Task, result *task.Result) (er
 		return multierr.Append(fmt.Errorf("failed at resize file"), err)
 	}
 
+	zap.S().Debugw("resized frames",
+		"variants_dir", variantsDir,
+		"task_id", tsk.ID,
+	)
+
 	done()
 
 	done = ctx.Inst().Prometheus.MakeResults()
@@ -132,16 +162,23 @@ func (w Worker) Work(ctx global.Context, tsk task.Task, result *task.Result) (er
 		return multierr.Append(fmt.Errorf("failed at make results"), err)
 	}
 
+	zap.S().Debugw("made results",
+		"results_dir", resultsDir,
+		"task_id", tsk.ID,
+	)
+
 	done()
 
 	done = ctx.Inst().Prometheus.UploadResults()
 
-	if err = multierr.Append(
-		w.uploadResults(tmpDir, resultsDir, variantsDir, tsk, result, ctx),
-		ctx.Err(),
-	); err != nil {
-		return err
+	err = w.uploadResults(tmpDir, resultsDir, variantsDir, tsk, result, ctx)
+	if err != nil {
+		return multierr.Append(fmt.Errorf("failed at upload results"), err)
 	}
+
+	zap.S().Debugw("uploded results",
+		"task_id", tsk.ID,
+	)
 
 	done()
 
