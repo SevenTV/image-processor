@@ -440,7 +440,6 @@ func (Worker) uploadResults(tmpDir string, resultsDir string, variantsDir string
 			}
 
 			mtx.Lock()
-			defer mtx.Unlock()
 			result.ImageOutputs = append(result.ImageOutputs, task.ResultImage{
 				Name:         path.Base(pth),
 				FrameCount:   frameCount,
@@ -454,6 +453,7 @@ func (Worker) uploadResults(tmpDir string, resultsDir string, variantsDir string
 				CacheControl: tsk.Output.CacheControl,
 				SHA3:         sha3,
 			})
+			mtx.Unlock()
 		}
 
 		if err := ctx.Inst().S3.UploadFile(ctx, &s3manager.UploadInput{
