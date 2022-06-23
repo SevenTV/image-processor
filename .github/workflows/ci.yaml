@@ -136,7 +136,9 @@ jobs:
         run: make -C cpp build
 
       - name: Move built files to /usr/local
-        run: sudo cp -r cpp/out/* /usr/local
+        run: |
+          sudo cp -r cpp/out/* /usr/local
+          sudo ldconfig
 
       - name: Run Tests
         run: make test
