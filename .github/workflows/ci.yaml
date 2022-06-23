@@ -135,14 +135,14 @@ jobs:
       - name: Build CPP Applications
         run: make -C cpp build
 
+      - name: Move built files to /usr/local
+        run: sudo cp -r cpp/out/* /usr/local
+
       - name: Run Tests
         run: make test
 
       - name: Build App
         run: make build
-
-      - name: Move built files to /usr/local
-        run: sudo cp -r cpp/out/* /usr/local
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
