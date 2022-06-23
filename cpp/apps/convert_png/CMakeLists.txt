@@ -1,7 +1,5 @@
 project(convert_png)
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
-
 find_package(Gifski REQUIRED)
 find_package(WebP REQUIRED webpmux webp)
 find_package(OpenCV REQUIRED)

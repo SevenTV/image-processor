@@ -1,9 +1,12 @@
+version: "3.8"
+
 services:
   proc:
     build:
+      dockerfile: docker/full.Dockerfile
       context: .
     volumes:
       - ./config.yaml:/app/config.yaml
       - ./out:/tmp/image-processor
     extra_hosts:
-        host.docker.internal: host-gateway
+      host.docker.internal: host-gateway

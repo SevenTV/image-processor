@@ -1,7 +1,5 @@
 project(webp_dump)
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
-
 find_package(OpenCV REQUIRED)
 find_package(WebP REQUIRED webp webpdemux)
 find_package(libavif REQUIRED)

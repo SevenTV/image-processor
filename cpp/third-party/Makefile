@@ -2,48 +2,74 @@
 
 all: _libavif _libwebp _gifski _opencv _ffmpeg
 
-_dav1d:
-	cd dav1d && \
-	(stat build || (mkdir build && cd build && meson --buildtype release --default-library=shared --libdir /usr/local/lib --includedir /usr/local/include ..)) && \
-	cd build && ninja && \
-	(sudo ninja install || ninja install)
+_build:
+	mkdir -p ../out/lib
+	mkdir -p ../out/include
+	mkdir -p ../out/bin
+	mkdir -p build
 
-_rav1e:
+_dav1d: _build
+	cd build && \
+	mkdir -p dav1d && \
+	cd dav1d && \
+	meson \
+		--buildtype release \
+		--default-library=shared \
+		--prefix $$(realpath $$(pwd)/../../../out) \
+		--includedir $$(realpath $$(pwd)/../../../out/include) \
+		--libdir $$(realpath $$(pwd)/../../../out/lib) \
+		--bindir $$(realpath $$(pwd)/../../../out/bin) \
+		../../dav1d && \
+	ninja && \
+	ninja install
+
+_rav1e: _build
 	cd rav1e && \
 	cargo install cargo-c && \
-	cargo cinstall --release --prefix=/usr/local --destdir ./out --library-type=cdylib && \
-	(sudo cp -r out/usr/local/* /usr/local || cp -r out/usr/local/* /usr/local) && \
-	(sudo ldconfig || ldconfig)
+	CARGO_TARGET_DIR=$$(realpath $$(pwd)/../build/rav1e) cargo cinstall --release --prefix=$$(realpath $$(pwd)/../../out) --library-type=cdylib
 
-_libavif: _dav1d _rav1e
+_libavif: _build _dav1d _rav1e
+	cd build && \
+	mkdir -p libavif && \
 	cd libavif && \
-	((stat build && cd build && ninja) || (mkdir -p build && cd build && cmake .. \
-		-G Ninja \
-		-DAVIF_CODEC_DAV1D=ON \
-		-DAVIF_CODEC_RAV1E=ON && \
-		ninja)) && \
-	cd build && \
-	(sudo ninja install || ninja install)
+	cmake ../../libavif \
+			-G Ninja \
+			-DAVIF_CODEC_DAV1D=ON \
+			-DAVIF_CODEC_RAV1E=ON \
+			-DCMAKE_PREFIX_PATH=$$(realpath $$(pwd)/../../../out) \
+			-D_DAV1D_INCLUDEDIR=$$(realpath $$(pwd)/../../../out/include) \
+			-D_DAV1D_LIBDIR=$$(realpath $$(pwd)/../../../../out/lib) \
+			-D_RAV1E_INCLUDEDIR=$$(realpath $$(pwd)/../../../../out/include) \
+			-D_RAV1E_LIBDIR=$$(realpath $$(pwd)/../../../../out/lib) \
+			-DCMAKE_INSTALL_BINDIR=$$(realpath $$(pwd)/../../../out/bin) \
+			-DCMAKE_INSTALL_LIBDIR=$$(realpath $$(pwd)/../../../out/lib) \
+			-DCMAKE_INSTALL_INCLUDEDIR=$$(realpath $$(pwd)/../../../out/include) && \
+	ninja && \
+	ninja install
 
-_libwebp:
+_libwebp: _build
+	cd build && \
+	mkdir -p libwebp && \
 	cd libwebp && \
-	((stat build && cd build && ninja) || (mkdir -p build && cd build && cmake .. \
+	cmake ../../libwebp \
 		-G Ninja \
-		-DBUILD_SHARED_LIBS=ON && \
-	ninja)) && \
-	cd build && \
-	(sudo ninja install || ninja install)
+		-DBUILD_SHARED_LIBS=ON \
+		-DCMAKE_INSTALL_PREFIX=$$(realpath $$(pwd)/../../../out) && \
+	ninja && \
+	ninja install
 
-_gifski:
+_gifski: _build
 	cd gifski && \
-	cargo build --release --lib && \
-	(sudo cp target/release/libgifski.so /usr/local/lib || cp target/release/libgifski.so /usr/local/lib) && \
-	(sudo cp gifski.h /usr/local/include || cp gifski.h /usr/local/include) && \
-	(sudo ldconfig || ldconfig)
+	CARGO_TARGET_DIR=$$(realpath $$(pwd)/../build/gifski) cargo build --release --lib && \
+	cp $$(realpath $$(pwd)/../build/gifski/release/libgifski.so) $$(realpath $$(pwd)/../../out/lib) && \
+	cp gifski.h $$(realpath $$(pwd)/../../out/include)
 
-_opencv:
+_opencv: _build
+	cd build && \
+	mkdir -p opencv && \
 	cd opencv && \
-	((stat build && cd build && ninja) || mkdir -p build && cd build && cmake .. -G Ninja \
+	cmake ../../opencv -G Ninja \
+		-DCMAKE_INSTALL_PREFIX=$$(realpath $$(pwd)/../../../out) \
 		-DWITH_AVFOUNDATION=OFF \
 		-DWITH_CAP_IOS=OFF \
 		-DWITH_CAROTENE=OFF \
@@ -135,17 +161,17 @@ _opencv:
 		-DBUILD_JAVA=OFF \
 		-DBUILD_OBJC=OFF \
 		-DBUILD_KOTLIN_EXTENSIONS=OFF && \
-	ninja) && \
-	cd build && \
-	(sudo ninja install || ninja install)
+	ninja && \
+	ninja install
 
-_ffmpeg:
+_ffmpeg: _build
+	cd build && \
+	mkdir -p FFmpeg && \
 	cd FFmpeg && \
-	stat build || (mkdir build && cd build && \
-	../configure \
+	PKG_CONFIG_PATH=$$(realpath $$(pwd)/../../../out/lib/pkgconfig) ../../FFmpeg/configure \
 		--extra-libs="-lpthread -lm" \
 		--ld="g++" \
-		--prefix=/usr/local \
+		--prefix=$$(realpath $$(pwd)/../../../out) \
 		--toolchain=hardened \
 		--arch=amd64 \
 		--enable-gpl \
@@ -160,10 +186,9 @@ _ffmpeg:
 		--enable-libx265 \
 		--enable-libx264 \
 		--enable-shared \
-		--disable-static) && \
-	cd build && \
+		--disable-static && \
 	make -j$$(nproc) && \
-	(sudo make install || make install)
+	make install
 
-clean:
-	rm -rf dav1d/build libavif/build libwebp/build gifski/target opencv/build rav1e/target rav1e/out FFmpeg/build
+clean: _build
+	rm -rf build/*

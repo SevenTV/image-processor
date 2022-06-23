@@ -61,6 +61,8 @@ FROM $BASE_IMG as deps-builder
         apt-get autoremove -y && \
         apt-get clean -y && \
         rm -rf /var/cache/apt/archives /var/lib/apt/lists/* && \
+        cd .. && \
+        cp -r out / && \
         cd / && \
         rm -rf /tmp/build
 
@@ -86,12 +88,6 @@ FROM $BASE_IMG as deps
         apt-get clean -y && \
         rm -rf /var/cache/apt/archives /var/lib/apt/lists/*
 
-    # copy compiled libs/binaries from the builders.
-    COPY --from=deps-builder /usr/local /usr/local
-
-    # Required since we are moving libs.
-    RUN ldconfig
-
 #
 # CPP Source Code
 #
@@ -100,7 +96,8 @@ FROM $BASE_IMG as cpp-src
 
     COPY cpp .
 
-    RUN rm -rf third-party
+    RUN rm -rf third-party out
+    COPY --from=deps-builder /out out
 
 #
 # Build the cpp application
@@ -116,20 +113,7 @@ FROM deps as cpp-builder
             cmake \
             make \
             ninja-build && \
-        make && \
-        apt-get remove -y \
-            build-essential \
-            cmake \
-            make \
-            ninja-build && \
-        apt-get autoremove -y && \
-        apt-get clean -y && \
-        rm -rf /var/cache/apt/archives /var/lib/apt/lists/* && \
-        mv out /tmp && \
-        cd /tmp && \
-        rm -rf /tmp/build && \
-        mkdir /tmp/build && \
-        mv out /tmp/build
+            make
 
 #
 # Download and install all deps required to run tests and build the go application
@@ -164,10 +148,9 @@ FROM deps as go-builder
 
     COPY go .
 
-
     COPY assets /tmp/assets
 
-    COPY --from=cpp-builder /usr/local /usr/local
+    COPY --from=cpp-builder /tmp/build/out /usr/local
 
     RUN ldconfig && make test
 
@@ -185,7 +168,16 @@ FROM deps as go-builder
 FROM deps as final
     WORKDIR /app
 
-    COPY --from=cpp-builder /tmp/build/out /usr/local/bin
+    RUN apt-get update && \
+        apt-get install -y \
+            ca-certificates && \
+        apt-get autoremove -y && \
+        apt-get clean -y && \
+        rm -rf /var/cache/apt/archives /var/lib/apt/lists/*
+
+    COPY --from=cpp-builder /tmp/build/out /usr/local
     COPY --from=go-builder /tmp/build/out .
+
+    RUN ldconfig
 
     CMD ./image_processor
