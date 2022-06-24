@@ -25,6 +25,7 @@ var assets = []string{
 	"animated-2.gif",
 	"animated-2.webp",
 	"animated-3.gif",
+	"animated-4.gif",
 	"animated.avi",
 	"animated.flv",
 	"animated.mov",

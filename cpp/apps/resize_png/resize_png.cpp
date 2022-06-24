@@ -190,7 +190,7 @@ int main(int argc, char* argv[])
             }
         }
 
-        cv::resize(output.input.data, img, newSize, 0, 0, cv::INTER_NEAREST_EXACT);
+        cv::resize(output.input.data, img, newSize, 0, 0, cv::INTER_AREA);
         cv::imwrite(output.path, img);
         img.release();
     }
