@@ -150,13 +150,15 @@ int main(int argc, char* argv[])
             encoder->maxQuantizer = 20;
             encoder->minQuantizerAlpha = 0;
             encoder->maxQuantizerAlpha = 10;
+            encoder->tileColsLog2 = 2;
+            encoder->tileRowsLog2 = 2;
             encoder->speed = 4;
             encoder->timescale = 100;
             encoder->keyframeInterval = 0;
 
             auto image = avifImageCreateEmpty();
             image->colorPrimaries = AVIF_COLOR_PRIMARIES_BT709;
-            image->transferCharacteristics = AVIF_TRANSFER_CHARACTERISTICS_LINEAR;
+            image->transferCharacteristics = AVIF_TRANSFER_CHARACTERISTICS_SRGB;
             image->matrixCoefficients = AVIF_MATRIX_COEFFICIENTS_BT601;
             image->yuvRange = AVIF_RANGE_FULL;
             image->alphaPremultiplied = false;
