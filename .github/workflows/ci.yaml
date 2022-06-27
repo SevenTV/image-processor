@@ -193,7 +193,7 @@ jobs:
           password: ${{ secrets.REGISTRY_TOKEN }}
 
       - name: Install kubectl
-        uses: azure/setup-kubectl@v2.1
+        uses: azure/setup-kubectl@v3.0
 
       - name: "[Production] Tag & Push docker images"
         if: ${{ env.DEPLOY_PROD == 'true' }}
