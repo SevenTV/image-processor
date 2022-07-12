@@ -145,6 +145,7 @@ int main(int argc, char* argv[])
     for (auto output : outputs) {
         if (output.type == OutputType::AVIF) {
             auto encoder = avifEncoderCreate();
+
             encoder->maxThreads = std::thread::hardware_concurrency();
             encoder->minQuantizer = 5;
             encoder->maxQuantizer = 20;

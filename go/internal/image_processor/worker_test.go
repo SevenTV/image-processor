@@ -34,6 +34,8 @@ var assets = []string{
 	"static-1.avif",
 	"static-1.jpeg",
 	"static-1.png",
+	"static-2.png",
+	"static-3.png",
 	"static-1.tiff",
 	"static-1.webp",
 	"static-2.avif",

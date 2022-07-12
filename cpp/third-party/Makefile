@@ -8,39 +8,37 @@ _build:
 	mkdir -p ../out/bin
 	mkdir -p build
 
-_dav1d: _build
+_aom: _build
 	cd build && \
-	mkdir -p dav1d && \
-	cd dav1d && \
-	meson \
-		--buildtype release \
-		--default-library=shared \
-		--prefix $$(realpath $$(pwd)/../../../out) \
-		--includedir $$(realpath $$(pwd)/../../../out/include) \
-		--libdir $$(realpath $$(pwd)/../../../out/lib) \
-		--bindir $$(realpath $$(pwd)/../../../out/bin) \
-		../../dav1d && \
+	mkdir -p aom && \
+	cd aom && \
+	cmake ../../aom \
+		-G Ninja \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DENABLE_DOCS=0 \
+		-DENABLE_EXAMPLES=0 \
+		-DENABLE_TESTDATA=0 \
+		-DENABLE_TESTS=0 \
+		-DENABLE_TOOLS=0 \
+		-DBUILD_SHARED_LIBS=ON \
+		-DCMAKE_INSTALL_PREFIX=$$(realpath $$(pwd)/../../../out) \
+		-DCMAKE_PREFIX_PATH=$$(realpath $$(pwd)/../../../out) \
+		-DCMAKE_INSTALL_BINDIR=bin \
+		-DCMAKE_INSTALL_LIBDIR=lib \
+		-DCMAKE_INSTALL_INCLUDEDIR=include && \
 	ninja && \
 	ninja install
 
-_rav1e: _build
-	cd rav1e && \
-	cargo install cargo-c && \
-	CARGO_TARGET_DIR=$$(realpath $$(pwd)/../build/rav1e) cargo cinstall --release --prefix=$$(realpath $$(pwd)/../../out) --library-type=cdylib
-
-_libavif: _build _dav1d _rav1e
+_libavif: _build _aom
 	cd build && \
 	mkdir -p libavif && \
 	cd libavif && \
 	cmake ../../libavif \
 			-G Ninja \
-			-DAVIF_CODEC_DAV1D=ON \
-			-DAVIF_CODEC_RAV1E=ON \
+			-DAVIF_CODEC_AOM=ON \
 			-DCMAKE_PREFIX_PATH=$$(realpath $$(pwd)/../../../out) \
-			-D_DAV1D_INCLUDEDIR=$$(realpath $$(pwd)/../../../out/include) \
-			-D_DAV1D_LIBDIR=$$(realpath $$(pwd)/../../../../out/lib) \
-			-D_RAV1E_INCLUDEDIR=$$(realpath $$(pwd)/../../../../out/include) \
-			-D_RAV1E_LIBDIR=$$(realpath $$(pwd)/../../../../out/lib) \
+			-D_AOM_INCLUDEDIR=$$(realpath $$(pwd)/../../../out/include) \
+			-D_AOM_LIBDIR=$$(realpath $$(pwd)/../../../../out/lib) \
 			-DCMAKE_INSTALL_BINDIR=$$(realpath $$(pwd)/../../../out/bin) \
 			-DCMAKE_INSTALL_LIBDIR=$$(realpath $$(pwd)/../../../out/lib) \
 			-DCMAKE_INSTALL_INCLUDEDIR=$$(realpath $$(pwd)/../../../out/include) && \
@@ -176,9 +174,8 @@ _ffmpeg: _build
 		--arch=amd64 \
 		--enable-gpl \
 		--disable-stripping \
-		--enable-libdav1d \
+		--enable-libaom \
 		--enable-nonfree \
-		--enable-librav1e \
 		--enable-openssl \
 		--enable-libopenjpeg \
 		--enable-libvpx \

@@ -10,12 +10,9 @@
 [submodule "cpp/third-party/libwebp"]
 	path = cpp/third-party/libwebp
 	url = https://github.com/webmproject/libwebp
-[submodule "cpp/third-party/dav1d"]
-	path = cpp/third-party/dav1d
-	url = https://code.videolan.org/videolan/dav1d.git
-[submodule "cpp/third-party/rav1e"]
-	path = cpp/third-party/rav1e
-	url = https://github.com/xiph/rav1e.git
 [submodule "cpp/third-party/FFmpeg"]
 	path = cpp/third-party/FFmpeg
 	url = https://github.com/FFmpeg/FFmpeg.git
+[submodule "cpp/third-party/aom"]
+	path = cpp/third-party/aom
+	url = https://aomedia.googlesource.com/aom

@@ -31,7 +31,14 @@ dev_deps:
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@master # TODO fix this version, currently master to lint go1.18 files
 
 test:
-	go test -count=1 -cover -parallel $$(nproc) -timeout 160s -race ./...
+	LD_LIBRARY_PATH=$$(realpath $$(pwd)/../cpp/out/lib):$$LD_LIBRARY_PATH \
+	PATH=$$(realpath $$(pwd)/../cpp/out/bin):$$PATH \
+		go test \
+			-count=1 \
+			-cover \
+			-parallel $$(nproc) \
+			-timeout 160s \
+			-race ./...
 
 work:
 	echo "go 1.18\n\nuse (\n\t.\n\t../../Common\n\t../../message-queue/go\n)" > go.work
