@@ -25,6 +25,7 @@ var assets = []string{
 	"animated-2.gif",
 	"animated-2.webp",
 	"animated-3.gif",
+	"animated-4.gif",
 	"animated.avi",
 	"animated.flv",
 	"animated.mov",
@@ -33,6 +34,8 @@ var assets = []string{
 	"static-1.avif",
 	"static-1.jpeg",
 	"static-1.png",
+	"static-2.png",
+	"static-3.png",
 	"static-1.tiff",
 	"static-1.webp",
 	"static-2.avif",
@@ -43,10 +46,12 @@ func TestWorker(t *testing.T) {
 	t.Parallel()
 
 	var err error
+
 	gCtx, cancel := global.WithCancel(global.New(context.Background(), &configure.Config{}))
 
 	gCtx.Inst().MessageQueue, err = messagequeue.New(gCtx, messagequeue.ConfigMock{})
 	testutil.IsNil(t, err, "mq init successful")
+
 	gCtx.Inst().Prometheus = prometheus.New(prometheus.Options{})
 
 	_, cwd, _, _ := runtime.Caller(0)
@@ -104,10 +109,12 @@ func TestWorkerFailed(t *testing.T) {
 	t.Parallel()
 
 	var err error
+
 	gCtx, cancel := global.WithCancel(global.New(context.Background(), &configure.Config{}))
 
 	gCtx.Inst().MessageQueue, err = messagequeue.New(gCtx, messagequeue.ConfigMock{})
 	testutil.IsNil(t, err, "mq init successful")
+
 	gCtx.Inst().Prometheus = prometheus.New(prometheus.Options{})
 
 	f := map[string]map[string][]byte{

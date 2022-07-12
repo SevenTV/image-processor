@@ -145,6 +145,7 @@ int main(int argc, char* argv[])
     for (auto output : outputs) {
         if (output.type == OutputType::AVIF) {
             auto encoder = avifEncoderCreate();
+
             encoder->maxThreads = std::thread::hardware_concurrency();
             encoder->minQuantizer = 5;
             encoder->maxQuantizer = 20;
@@ -160,8 +161,8 @@ int main(int argc, char* argv[])
             image->colorPrimaries = AVIF_COLOR_PRIMARIES_BT709;
             image->transferCharacteristics = AVIF_TRANSFER_CHARACTERISTICS_SRGB;
             image->matrixCoefficients = AVIF_MATRIX_COEFFICIENTS_BT601;
-            image->yuvRange = AVIF_RANGE_LIMITED;
-            image->alphaPremultiplied = true;
+            image->yuvRange = AVIF_RANGE_FULL;
+            image->alphaPremultiplied = false;
             image->width = width;
             image->height = height;
             image->depth = 8;

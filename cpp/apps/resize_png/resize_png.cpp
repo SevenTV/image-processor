@@ -157,7 +157,7 @@ int main(int argc, char* argv[])
                 cv::Mat padded;
 
                 if (currentRatio < newRatio) { // means that width is too small
-                    padded.create(img.rows, int(double(img.rows)*newRatio), img.type());
+                    padded.create(img.rows, int(double(img.rows) * newRatio), img.type());
                 } else { // means that height is too small
                     padded.create(int(double(img.cols) / newRatio), img.cols, img.type());
                 }
@@ -190,7 +190,7 @@ int main(int argc, char* argv[])
             }
         }
 
-        cv::resize(output.input.data, img, newSize, 0, 0, cv::INTER_NEAREST_EXACT);
+        cv::resize(output.input.data, img, newSize, 0, 0, cv::INTER_AREA);
         cv::imwrite(output.path, img);
         img.release();
     }

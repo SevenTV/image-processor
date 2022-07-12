@@ -1,7 +1,5 @@
 project(resize_png)
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
-
 find_package(OpenCV REQUIRED)
 
 add_executable(resize_png resize_png.cpp)

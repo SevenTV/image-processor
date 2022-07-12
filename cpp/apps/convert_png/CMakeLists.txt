@@ -1,7 +1,5 @@
 project(convert_png)
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
-
 find_package(Gifski REQUIRED)
 find_package(WebP REQUIRED webpmux webp)
 find_package(OpenCV REQUIRED)
@@ -14,6 +12,7 @@ target_include_directories(
   PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${GIFSKI_INCLUDE_DIR} ${WebP_INCLUDE_DIRS} ${OPENCV_INCLUDE_DIRS})
 
-target_link_libraries(convert_png ${GIFSKI_LIBRARIES} ${WebP_LIBRARIES} avif ${OpenCV_LIBS})
+target_link_libraries(convert_png ${GIFSKI_LIBRARIES} ${WebP_LIBRARIES} avif
+                      ${OpenCV_LIBS})
 
 install(TARGETS convert_png)

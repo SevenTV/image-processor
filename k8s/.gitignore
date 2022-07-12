@@ -1,2 +1,1 @@
-!dev.template.yaml
-!prod.template.yaml
+!*.template.yaml

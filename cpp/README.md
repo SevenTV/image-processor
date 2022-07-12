@@ -40,7 +40,7 @@ You will also need the rust compiler
 curl https://sh.rustup.rs -sSf | bash -s -- -y
 ```
 
-## 2. You can now start builing all submodules.
+## 2. You can now start builing all submodules
 
 To fetch them do
 

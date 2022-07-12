@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: image-processor
-  namespace: app-dev
+  namespace: app
   labels:
     app: image-processor
 spec:
@@ -15,11 +15,9 @@ spec:
         app: image-processor
     spec:
       terminationGracePeriodSeconds: 30
-      imagePullSecrets:
-        - name: regcred
       containers:
-        - name: image-processor-dev
-          image: harbor.disembark.dev/7tv-stage/image-processor:${IMAGE_TAG}
+        - name: image-processor
+          image: ${IMAGE}
           imagePullPolicy: IfNotPresent
           ports:
             - name: metrics
@@ -68,8 +66,8 @@ spec:
               name: tempfs
           resources:
             requests:
-              memory: "4Gi"
-              cpu: "4"
+              memory: "8Gi"
+              cpu: "8"
             limits:
               memory: "24Gi"
               cpu: "24"
@@ -85,7 +83,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: image-processor-config
-  namespace: app-dev
+  namespace: app
 data:
   config.yaml: |
     level: debug
@@ -94,22 +92,22 @@ data:
     health:
       enabled: true
       bind: 0.0.0.0:9000
-    rmq:
-      jobs_queue: jobs
-    s3:
-      region: us-east-1
-      endpoint: http://rook-ceph-rgw-ceph-objectstore.rook-ceph.svc
     monitoring:
       bind: 0.0.0.0:9100
       enabled: true
+    message_queue:
+      rmq:
+        max_reconnect_attempts: 10
+      sqs:
+        max_retry_attempts: 10
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: image-processor-dev-servicemonitor
+  name: image-processor
   namespace: monitoring
   labels:
-    app: image-processo
+    app: image-processor
     release: prometheus
 spec:
   jobLabel: image-processor
@@ -118,22 +116,6 @@ spec:
       app: image-processor
   namespaceSelector:
     matchNames:
-      - app-dev
+      - app
   endpoints:
     - port: metrics
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: image-processor-svc
-  namespace: app-dev
-  labels:
-    app: image-processor
-spec:
-  clusterIP: None
-  ports:
-    - name: metrics
-      port: 9100
-      targetPort: metrics
-  selector:
-    app: image-processor

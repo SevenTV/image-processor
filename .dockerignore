@@ -10,7 +10,6 @@ packrd/
 *_gen.go
 **/node_modules/
 build/
-out/
 *.a
 *.o
 *.o.*
@@ -42,7 +41,6 @@ out/
 
 .cache
 cpp/build
-cpp/out
 cpp/third-party/dav1d/build 
 cpp/third-party/libavif/build 
 cpp/third-party/libwebp/build 

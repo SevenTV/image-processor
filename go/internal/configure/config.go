@@ -31,7 +31,9 @@ func New() *Config {
 	})
 	tmp := viper.New()
 	defaultConfig := bytes.NewReader(b)
+
 	tmp.SetConfigType("json")
+
 	checkErr(tmp.ReadConfig(defaultConfig))
 	checkErr(config.MergeConfigMap(viper.AllSettings()))
 
@@ -45,6 +47,7 @@ func New() *Config {
 	// File
 	config.SetConfigFile(config.GetString("config"))
 	config.AddConfigPath(".")
+
 	if err := config.ReadInConfig(); err == nil {
 		checkErr(config.MergeInConfig())
 	}
@@ -69,13 +72,16 @@ func New() *Config {
 func bindEnvs(config *viper.Viper, iface interface{}, parts ...string) {
 	ifv := reflect.ValueOf(iface)
 	ift := reflect.TypeOf(iface)
+
 	for i := 0; i < ift.NumField(); i++ {
 		v := ifv.Field(i)
 		t := ift.Field(i)
+
 		tv, ok := t.Tag.Lookup("mapstructure")
 		if !ok {
 			continue
 		}
+
 		switch v.Kind() {
 		case reflect.Struct:
 			bindEnvs(config, v.Interface(), append(parts, tv)...)

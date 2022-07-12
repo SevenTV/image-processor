@@ -14,7 +14,6 @@ import (
 )
 
 func TestHealth(t *testing.T) {
-
 	config := &configure.Config{}
 	config.Health.Enabled = true
 	config.Health.Bind = "127.0.1.1:3000"
@@ -27,6 +26,7 @@ func TestHealth(t *testing.T) {
 
 	resp, err := http.DefaultClient.Get("http://127.0.1.1:3000")
 	testutil.IsNil(t, err, "No error")
+
 	_ = resp.Body.Close()
 	testutil.Assert(t, http.StatusOK, resp.StatusCode, "response code")
 
@@ -55,21 +55,27 @@ func TestHealthS3RMQ(t *testing.T) {
 
 	resp, err := http.DefaultClient.Get("http://127.0.1.1:3000")
 	testutil.IsNil(t, err, "No error")
+
 	_ = resp.Body.Close()
 	testutil.Assert(t, http.StatusOK, resp.StatusCode, "response code all up")
 
-	gCtx.Inst().MessageQueue.(*messagequeue.InstanceMock).SetConnected(false)
+	mock, _ := gCtx.Inst().MessageQueue.(*messagequeue.InstanceMock)
+	mock.SetConnected(false)
 
 	resp, err = http.DefaultClient.Get("http://127.0.1.1:3000")
 	testutil.IsNil(t, err, "No error")
+
 	_ = resp.Body.Close()
 	testutil.Assert(t, http.StatusInternalServerError, resp.StatusCode, "response code rmq down")
 
-	gCtx.Inst().MessageQueue.(*messagequeue.InstanceMock).SetConnected(true)
-	gCtx.Inst().S3.(*s3.MockInstance).SetConnected(false)
+	s3, _ := gCtx.Inst().S3.(*s3.MockInstance)
+
+	mock.SetConnected(true)
+	s3.SetConnected(false)
 
 	resp, err = http.DefaultClient.Get("http://127.0.1.1:3000")
 	testutil.IsNil(t, err, "No error")
+
 	_ = resp.Body.Close()
 	testutil.Assert(t, http.StatusInternalServerError, resp.StatusCode, "response code s3 down")
 

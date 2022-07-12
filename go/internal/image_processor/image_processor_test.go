@@ -23,8 +23,10 @@ func TestRun(t *testing.T) {
 	const jobQueue = "image-processor-jobs"
 
 	var err error
+
 	config := configure.Config{}
 	config.MessageQueue.JobsQueue = jobQueue
+
 	gCtx, cancel := global.WithCancel(global.New(context.Background(), &config))
 	defer cancel()
 
@@ -46,8 +48,10 @@ func TestRun(t *testing.T) {
 
 	Run(gCtx)
 
-	const TaskID = "batchest-test-123"
-	const CallbackEvent = "image-processor-results"
+	const (
+		TaskID        = "batchest-test-123"
+		CallbackEvent = "image-processor-results"
+	)
 
 	tsk, err := json.Marshal(task.Task{
 		ID:    TaskID,
@@ -95,11 +99,12 @@ func TestRun(t *testing.T) {
 
 	testutil.Assert(t, task.ResultStateSuccess, result.State, "The job processed successfully")
 
-	gCtx.Inst().MessageQueue.(*messagequeue.InstanceMock).SetConnected(false)
+	mock, _ := gCtx.Inst().MessageQueue.(*messagequeue.InstanceMock)
+	mock.SetConnected(false)
 
 	time.Sleep(time.Second)
 
-	gCtx.Inst().MessageQueue.(*messagequeue.InstanceMock).SetConnected(true)
+	mock.SetConnected(true)
 
 	err = gCtx.Inst().MessageQueue.Publish(gCtx, messagequeue.OutgoingMessage{
 		Queue:   jobQueue,
