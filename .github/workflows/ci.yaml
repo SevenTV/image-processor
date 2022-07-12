@@ -63,11 +63,17 @@ jobs:
           echo "::set-output name=go-mod::$(go env GOMODCACHE)"
           echo "::set-output name=pwd::$(pwd)"
 
+      - name: Results Cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.cache-paths.outputs.pwd }}/cpp/out
+          key: ${{ runner.os }}-results-${{ hashFiles('cpp/third-party/Makefile') }}
+
       - name: External Build Cache
         uses: actions/cache@v3
         with:
           path: ${{ steps.cache-paths.outputs.pwd }}/cpp/third-party/build
-          key: ${{ runner.os }}-external-build
+          key: ${{ runner.os }}-external-build-${{ hashFiles('cpp/third-party/Makefile') }}
 
       - name: Go Build Cache
         uses: actions/cache@v3
