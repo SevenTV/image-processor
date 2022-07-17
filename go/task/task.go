@@ -52,8 +52,9 @@ type TaskInput struct {
 }
 
 type TaskOutput struct {
-	Prefix       string `json:"prefix"`
-	ACL          string `json:"acl"`
-	Bucket       string `json:"bucket"`
-	CacheControl string `json:"cache_control"`
+	Prefix               string `json:"prefix"`
+	ACL                  string `json:"acl"`
+	Bucket               string `json:"bucket"`
+	CacheControl         string `json:"cache_control"`
+	ExcludeFileExtension bool   `json:"exclude_file_extension"` // Temporary compatibility workaround, this omits the file extension for WEBP
 }
