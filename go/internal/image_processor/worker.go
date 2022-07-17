@@ -341,9 +341,10 @@ func (Worker) uploadResults(tmpDir string, resultsDir string, variantsDir string
 
 		sha3 := hex.EncodeToString(h.Sum(nil))
 
+		t := container.Match(data)
+
 		key := path.Join(tsk.Output.Prefix, path.Base(pth))
 
-		t := container.Match(data)
 		if t == matchers.TypeZip {
 			result.ZipOutput = task.ResultZipOutput{
 				Name:         path.Base(pth),
@@ -360,6 +361,10 @@ func (Worker) uploadResults(tmpDir string, resultsDir string, variantsDir string
 				height     int
 				frameCount int
 			)
+
+			if tsk.Output.ExcludeFileExtension && t == matchers.TypeWebp {
+				key = strings.TrimSuffix(key, ".webp")
+			}
 
 			switch t {
 			case matchers.TypeGif, matchers.TypePng:
