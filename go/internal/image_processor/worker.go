@@ -345,9 +345,16 @@ func (Worker) uploadResults(tmpDir string, resultsDir string, variantsDir string
 
 		key := path.Join(tsk.Output.Prefix, path.Base(pth))
 
+		name := path.Base(pth)
+
+		if tsk.Output.ExcludeFileExtension {
+			key = strings.TrimSuffix(key, ".webp")
+			name = strings.TrimSuffix(name, ".webp")
+		}
+
 		if t == matchers.TypeZip {
 			result.ZipOutput = task.ResultZipOutput{
-				Name:         path.Base(pth),
+				Name:         name,
 				Size:         len(data),
 				Key:          key,
 				Bucket:       tsk.Output.Bucket,
@@ -361,10 +368,6 @@ func (Worker) uploadResults(tmpDir string, resultsDir string, variantsDir string
 				height     int
 				frameCount int
 			)
-
-			if tsk.Output.ExcludeFileExtension && t == matchers.TypeWebp {
-				key = strings.TrimSuffix(key, ".webp")
-			}
 
 			switch t {
 			case matchers.TypeGif, matchers.TypePng:
@@ -446,7 +449,7 @@ func (Worker) uploadResults(tmpDir string, resultsDir string, variantsDir string
 
 			mtx.Lock()
 			result.ImageOutputs = append(result.ImageOutputs, task.ResultImage{
-				Name:         path.Base(pth),
+				Name:         name,
 				FrameCount:   frameCount,
 				Width:        width,
 				Height:       height,
