@@ -525,9 +525,16 @@ func (Worker) makeResults(tmpDir string, delays []int, tsk task.Task, variantsDi
 		return "", multierr.Append(fmt.Errorf("failed at mkdir resultsDir"), err)
 	}
 
+	threads := ctx.Config().Worker.ThreadsPerWorker
+	if threads <= 0 {
+		threads = 1
+	}
+
 	if len(delays) > 1 {
 		for _, scale := range tsk.Scales {
-			convertArgs := []string{}
+			convertArgs := []string{
+				"-t", strconv.Itoa(threads),
+			}
 
 			for i := 0; i < len(delays); i++ {
 				if delays[i] <= 1 {
@@ -593,6 +600,7 @@ func (Worker) makeResults(tmpDir string, delays []int, tsk task.Task, variantsDi
 
 	for _, scale := range tsk.Scales {
 		convertArgs := []string{
+			"-t", strconv.Itoa(threads),
 			"-i", path.Join(variantsDir, fmt.Sprintf("0000_%dx.png", scale)),
 		}
 

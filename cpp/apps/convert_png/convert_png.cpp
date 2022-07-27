@@ -30,6 +30,7 @@ void syntax()
               << "  -i,--input FILENAME         : Input file location (supported "
                  "types are png)."
               << std::endl
+              << "  -t,--threads THREADS        : The number of threads to use." << std::endl
               << "  -o,--output FILENAME        : Output file location "
                  " (supported types are webp, avif, gif)."
               << std::endl
@@ -55,7 +56,9 @@ int main(int argc, char* argv[])
     std::vector<File> inputs;
     std::vector<Output> outputs;
 
-    int width, height;
+    int width, height = 0;
+
+    int threads = std::thread::hardware_concurrency();
 
     int argIndex = 1;
     while (argIndex < argc) {
@@ -64,11 +67,19 @@ int main(int argc, char* argv[])
         if (arg == "--delay" || arg == "-d") {
             NEXTARG();
             delay = std::atoi(arg.c_str());
-            if (delay == 0) {
+            if (delay <= 0) {
                 std::cerr << "\"" << arg << "\" is not a valid value for delay."
                           << std::endl;
                 return EXIT_FAILURE;
             }
+        } else if (arg == "--threads" || arg == "-t") {
+                NEXTARG();
+                threads = std::atoi(arg.c_str());
+                if (threads <= 0) {
+                    std::cerr << "\"" << arg << "\" is not a valid value for threads."
+                        << std::endl;
+                    return EXIT_FAILURE;
+                }
         } else if (arg == "--help" || arg == "-h") {
             syntax();
             return EXIT_FAILURE;
@@ -146,7 +157,7 @@ int main(int argc, char* argv[])
         if (output.type == OutputType::AVIF) {
             auto encoder = avifEncoderCreate();
 
-            encoder->maxThreads = std::thread::hardware_concurrency();
+            encoder->maxThreads = threads;
             encoder->minQuantizer = 5;
             encoder->maxQuantizer = 20;
             encoder->minQuantizerAlpha = 0;
@@ -224,7 +235,7 @@ int main(int argc, char* argv[])
             anim_config.allow_mixed = 1;
             config.quality = 95;
             config.lossless = 1;
-            config.thread_level = 1;
+            config.thread_level = 0;
 
             auto ok = WebPValidateConfig(&config);
             if (!ok) {

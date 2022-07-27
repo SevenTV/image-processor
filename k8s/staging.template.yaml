@@ -69,8 +69,8 @@ spec:
               memory: "8Gi"
               cpu: "8"
             limits:
-              memory: "24Gi"
-              cpu: "24"
+              memory: "8Gi"
+              cpu: "10"
       volumes:
         - name: config
           configMap:
@@ -89,6 +89,8 @@ data:
     level: debug
     worker:
       temp_dir: /tempfs
+      threads_per_worker: 3
+      jobs: 5
     health:
       enabled: true
       bind: 0.0.0.0:9000
