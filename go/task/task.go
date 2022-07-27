@@ -47,8 +47,17 @@ type TaskLimits struct {
 }
 
 type TaskInput struct {
-	Bucket string `json:"bucket"`
-	Key    string `json:"key"`
+	Bucket   string            `json:"bucket"`
+	Key      string            `json:"key"`
+	Reupload TaskInputReupload `json:"reupload"`
+}
+
+type TaskInputReupload struct {
+	Enabled      bool   `json:"enabled"`
+	Key          string `json:"key"`
+	Bucket       string `json:"bucket"`
+	ACL          string `json:"acl"`
+	CacheControl string `json:"cache_control"`
 }
 
 type TaskOutput struct {

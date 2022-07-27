@@ -141,6 +141,13 @@ func (w Worker) Work(ctx global.Context, tsk task.Task, result *task.Result) (er
 		Size:        len(raw),
 	}
 
+	if tsk.Input.Reupload.Enabled {
+		result.ImageInput.Key = tsk.Input.Reupload.Key
+		result.ImageInput.Bucket = tsk.Input.Reupload.Bucket
+		result.ImageInput.CacheControl = tsk.Input.Reupload.CacheControl
+		result.ImageInput.ACL = tsk.Input.Reupload.ACL
+	}
+
 	done = ctx.Inst().Prometheus.ResizeFrames()
 
 	variantsDir, err := w.resizeFrames(ctx, inputDir, tmpDir, tsk, width, height, delays)
@@ -171,7 +178,7 @@ func (w Worker) Work(ctx global.Context, tsk task.Task, result *task.Result) (er
 
 	done = ctx.Inst().Prometheus.UploadResults()
 
-	err = w.uploadResults(tmpDir, resultsDir, variantsDir, tsk, result, ctx)
+	err = w.uploadResults(tmpDir, resultsDir, variantsDir, raw, tsk, result, ctx)
 	if err != nil {
 		return multierr.Append(fmt.Errorf("failed at upload results"), err)
 	}
@@ -239,7 +246,7 @@ func (Worker) downloadFile(ctx global.Context, tsk task.Task, tmpDir string, res
 	return buf.Bytes(), match, inputFile, nil
 }
 
-func (Worker) uploadResults(tmpDir string, resultsDir string, variantsDir string, tsk task.Task, result *task.Result, ctx global.Context) (err error) {
+func (Worker) uploadResults(tmpDir string, resultsDir string, variantsDir string, inputFile []byte, tsk task.Task, result *task.Result, ctx global.Context) (err error) {
 	defer func() {
 		if pnk := recover(); pnk != nil {
 			err = multierr.Append(fmt.Errorf("panic at runtime: %v", pnk), err)
@@ -303,6 +310,19 @@ func (Worker) uploadResults(tmpDir string, resultsDir string, variantsDir string
 		uploadErr error
 		mtx       sync.Mutex
 	)
+
+	if tsk.Input.Reupload.Enabled {
+		if err := ctx.Inst().S3.UploadFile(ctx, &s3manager.UploadInput{
+			Body:         bytes.NewReader(inputFile),
+			ACL:          aws.String(tsk.Input.Reupload.ACL),
+			Bucket:       aws.String(tsk.Input.Reupload.Bucket),
+			CacheControl: aws.String(tsk.Input.Reupload.CacheControl),
+			ContentType:  aws.String(result.ImageInput.ContentType),
+			Key:          aws.String(tsk.Input.Reupload.Key),
+		}); err != nil {
+			return multierr.Append(fmt.Errorf("failed at reupload input"), err)
+		}
+	}
 
 	uploadPath := func(pth string) {
 		defer wg.Done()
