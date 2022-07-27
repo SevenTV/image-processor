@@ -1,6 +1,7 @@
 package task
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -33,6 +34,7 @@ type Result struct {
 	ImageInput   ResultImage     `json:"image_input"`
 	ImageOutputs []ResultImage   `json:"image_outputs"`
 	ZipOutput    ResultZipOutput `json:"zip_output"`
+	Metadata     json.RawMessage `json:"metadata"`
 }
 
 type ResultImage struct {

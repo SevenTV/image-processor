@@ -132,8 +132,9 @@ func process(gCtx global.Context, msg *messagequeue.IncomingMessage, workers cha
 	}
 
 	result := task.Result{
-		ID:    t.ID,
-		State: task.ResultStateFailed,
+		ID:       t.ID,
+		State:    task.ResultStateFailed,
+		Metadata: t.Metadata,
 	}
 
 	go func() {

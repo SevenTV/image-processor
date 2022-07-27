@@ -1,6 +1,9 @@
 package task
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 type TaskFlag int32
 
@@ -28,15 +31,16 @@ const (
 )
 
 type Task struct {
-	ID                string      `json:"id"`
-	Flags             TaskFlag    `json:"flags"`
-	Input             TaskInput   `json:"input"`
-	Output            TaskOutput  `json:"output"`
-	SmallestMaxWidth  int         `json:"smallest_max_width"`  // 96
-	SmallestMaxHeight int         `json:"smallest_max_height"` // 32
-	ResizeRatio       ResizeRatio `json:"resize_ratio"`
-	Scales            []int       `json:"scales"` // 1, 2, 3, 4 for 1x, 2x, 3x, 4x
-	Limits            TaskLimits  `json:"limits"`
+	ID                string          `json:"id"`
+	Flags             TaskFlag        `json:"flags"`
+	Input             TaskInput       `json:"input"`
+	Output            TaskOutput      `json:"output"`
+	SmallestMaxWidth  int             `json:"smallest_max_width"`  // 96
+	SmallestMaxHeight int             `json:"smallest_max_height"` // 32
+	ResizeRatio       ResizeRatio     `json:"resize_ratio"`
+	Scales            []int           `json:"scales"` // 1, 2, 3, 4 for 1x, 2x, 3x, 4x
+	Limits            TaskLimits      `json:"limits"`
+	Metadata          json.RawMessage `json:"metadata"`
 }
 
 type TaskLimits struct {
