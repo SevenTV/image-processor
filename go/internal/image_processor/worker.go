@@ -142,6 +142,7 @@ func (w Worker) Work(ctx global.Context, tsk task.Task, result *task.Result) (er
 	}
 
 	if tsk.Input.Reupload.Enabled {
+		result.ImageInput.Name = "original"
 		result.ImageInput.Key = tsk.Input.Reupload.Key
 		result.ImageInput.Bucket = tsk.Input.Reupload.Bucket
 		result.ImageInput.CacheControl = tsk.Input.Reupload.CacheControl

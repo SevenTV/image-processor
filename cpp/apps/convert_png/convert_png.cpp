@@ -45,8 +45,11 @@ bool equal(const cv::Mat& a, const cv::Mat& b)
     if ((a.rows != b.rows) || (a.cols != b.cols))
         return false;
 
-    auto s = cv::sum(a - b);
-    return (s[0] == 0) && (s[1] == 0) && (s[2] == 0);
+    cv::Mat c;
+    cv::bitwise_xor(a, b, c);
+
+    auto s = cv::sum(c);
+    return (s[0] == 0) && (s[1] == 0) && (s[2] == 0) && (s[3] == 0);
 }
 
 int main(int argc, char* argv[])

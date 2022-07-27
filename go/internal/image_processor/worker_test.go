@@ -40,6 +40,7 @@ var assets = []string{
 	"static-1.webp",
 	"static-2.avif",
 	"static-2.webp",
+	"animated-3.webp",
 }
 
 func TestWorker(t *testing.T) {
