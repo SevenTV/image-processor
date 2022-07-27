@@ -73,13 +73,13 @@ int main(int argc, char* argv[])
                 return EXIT_FAILURE;
             }
         } else if (arg == "--threads" || arg == "-t") {
-                NEXTARG();
-                threads = std::atoi(arg.c_str());
-                if (threads <= 0) {
-                    std::cerr << "\"" << arg << "\" is not a valid value for threads."
-                        << std::endl;
-                    return EXIT_FAILURE;
-                }
+            NEXTARG();
+            threads = std::atoi(arg.c_str());
+            if (threads <= 0) {
+                std::cerr << "\"" << arg << "\" is not a valid value for threads."
+                          << std::endl;
+                return EXIT_FAILURE;
+            }
         } else if (arg == "--help" || arg == "-h") {
             syntax();
             return EXIT_FAILURE;
