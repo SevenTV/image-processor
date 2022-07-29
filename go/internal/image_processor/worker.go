@@ -559,7 +559,7 @@ func (Worker) makeResults(tmpDir string, delays []int, tsk task.Task, variantsDi
 
 			for i := 0; i < len(delays); i++ {
 				if delays[i] <= 1 {
-					delays[i] = 2
+					delays[i] = 10 // browsers treat 100fps gifs as 10fps
 				}
 
 				convertArgs = append(convertArgs,

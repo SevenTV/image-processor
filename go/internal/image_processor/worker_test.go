@@ -25,7 +25,9 @@ var assets = []string{
 	"animated-2.gif",
 	"animated-2.webp",
 	"animated-3.gif",
+	"animated-3.webp",
 	"animated-4.gif",
+	"animated-5.gif",
 	"animated.avi",
 	"animated.flv",
 	"animated.mov",
@@ -40,7 +42,6 @@ var assets = []string{
 	"static-1.webp",
 	"static-2.avif",
 	"static-2.webp",
-	"animated-3.webp",
 }
 
 func TestWorker(t *testing.T) {
