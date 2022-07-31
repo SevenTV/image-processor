@@ -122,6 +122,10 @@ int main(int argc, char* argv[])
                 std::cerr << "Invalid input image: " << arg << std::endl;
                 return EXIT_FAILURE;
             }
+
+            // in theory because of how we deduplicate frames here to optimize encoding, 
+            // people could upload a 2 frame emote where both frames are the same and it would produce single frame animated emotes.
+            // however this is likely not an issue as not many people do this and also it wouldnt really break anything (i think).
             if (inputs.size() != 0) {
                 auto lastInput = inputs[inputs.size() - 1];
                 if (equal(lastInput.data, f.data)) {
@@ -228,14 +232,18 @@ int main(int argc, char* argv[])
             WebPConfig config;
             WebPPicture pic;
             WebPData webp_data;
+            WebPMemoryWriter memory_writer;
 
             WebPDataInit(&webp_data);
-            if (!WebPAnimEncoderOptionsInit(&anim_config) || !WebPConfigInit(&config) || !WebPPictureInit(&pic)) {
+            WebPMemoryWriterInit(&memory_writer);
+            if (
+                !WebPConfigInit(&config) || !WebPPictureInit(&pic) || (inputs.size() > 1 ? !WebPAnimEncoderOptionsInit(&anim_config) : false)) {
                 std::cerr << "Library version mismatch." << std::endl;
                 return EXIT_FAILURE;
             }
 
             anim_config.allow_mixed = 1;
+
             config.quality = 95;
             config.lossless = 1;
             config.thread_level = 0;
@@ -250,10 +258,13 @@ int main(int argc, char* argv[])
             pic.width = width;
             pic.height = height;
 
-            auto enc = WebPAnimEncoderNew(width, height, &anim_config);
-            if (!enc) {
-                std::cerr << "Could not create WebPAnimEncoder object." << std::endl;
-                return EXIT_FAILURE;
+            WebPAnimEncoder* anim_encoder = NULL;
+            if (inputs.size() > 1) {
+                anim_encoder = WebPAnimEncoderNew(width, height, &anim_config);
+                if (!anim_encoder) {
+                    std::cerr << "Could not create WebPAnimEncoder object." << std::endl;
+                    return EXIT_FAILURE;
+                }
             }
 
             auto ts = 0;
@@ -261,7 +272,13 @@ int main(int argc, char* argv[])
                 auto input = inputs[i];
 
                 ok = WebPPictureImportRGBA(&pic, input.data.data, 4 * width * sizeof(*input.data.data));
-                ok = ok && WebPAnimEncoderAdd(enc, &pic, ts, &config);
+                if (inputs.size() > 1) {
+                    ok = ok && WebPAnimEncoderAdd(anim_encoder, &pic, ts, &config);
+                } else {
+                    pic.writer = WebPMemoryWrite;
+                    pic.custom_ptr = (void*)&memory_writer;
+                    ok = ok && WebPEncode(&config, &pic);
+                }
                 if (!ok) {
                     std::cerr << "WebP error while adding frame #" << i << ": " << pic.error_code << std::endl;
                     return EXIT_FAILURE;
@@ -271,16 +288,18 @@ int main(int argc, char* argv[])
                 ts += input.delay * 10;
             }
 
-            ok = ok && WebPAnimEncoderAdd(enc, NULL, ts, NULL);
-            ok = ok && WebPAnimEncoderAssemble(enc, &webp_data);
+            if (inputs.size() > 1) {
+                ok = ok && WebPAnimEncoderAdd(anim_encoder, NULL, ts, NULL);
+                ok = ok && WebPAnimEncoderAssemble(anim_encoder, &webp_data);
+            }
             if (!ok) {
                 std::cerr << "Error during final animation assembly." << std::endl;
                 return EXIT_FAILURE;
             }
 
-            WebPAnimEncoderDelete(enc);
-
             if (inputs.size() > 1) {
+                WebPAnimEncoderDelete(anim_encoder);
+
                 auto mux = WebPMuxCreate(&webp_data, 1);
                 if (mux == NULL) {
                     std::cerr << "ERROR: Could not re-mux to add loop count/metadata." << std::endl;
@@ -313,11 +332,15 @@ int main(int argc, char* argv[])
 
             std::ofstream fout;
             fout.open(output.path, std::ios::binary | std::ios::out);
-            fout.write((const char*)webp_data.bytes, webp_data.size);
+            if (inputs.size() > 1) {
+                fout.write((const char*)webp_data.bytes, webp_data.size);
+            } else {
+                fout.write((const char*)memory_writer.mem, memory_writer.size);
+            }
             fout.close();
 
             WebPDataClear(&webp_data);
-
+            WebPMemoryWriterClear(&memory_writer);
         } else if (output.type == OutputType::GIF) {
             GifskiSettings settings;
             settings.quality = 95;

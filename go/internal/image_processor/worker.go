@@ -828,15 +828,15 @@ func (Worker) exportFrames(ctx global.Context, tmpDir string, inputFile string, 
 				delays = append(delays, delay)
 			}
 		}
-	case matchers.TypeGif,
-		matchers.TypePng,
-		matchers.TypeMp4,
-		matchers.TypeFlv,
-		matchers.TypeAvi,
-		matchers.TypeMov,
-		matchers.TypeJpeg,
-		matchers.TypeTiff,
-		matchers.TypeWebm:
+	case matchers.TypeGif, // animated
+		matchers.TypePng,  // can be animated
+		matchers.TypeMp4,  // animated
+		matchers.TypeFlv,  // animated
+		matchers.TypeAvi,  // animated
+		matchers.TypeMov,  // animated
+		matchers.TypeJpeg, // static
+		matchers.TypeTiff, // static
+		matchers.TypeWebm: // animated
 		// we use ffmpeg to get the frames
 		if match == matchers.TypeGif {
 			// if this is a gif we need to know the per frame timings, we can use the builtin gif decoder to get this
@@ -846,6 +846,17 @@ func (Worker) exportFrames(ctx global.Context, tmpDir string, inputFile string, 
 			}
 
 			delays = img.Delay
+
+			// gifs have a hard frame timing min of 20ms (2 timescales) if its 10ms (1 timescale) browsers treat this as 100ms (10 timescales)
+			for i, d := range delays {
+				if d <= 1 { // 10ms
+					d = 10 // 100ms
+				} else if d <= 2 { // 20ms
+					d = 2 // 20ms
+				}
+
+				delays[i] = d
+			}
 		}
 
 		// now we must use ffmpeg to extract all the frames of the image
