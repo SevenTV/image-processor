@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/aws/aws-sdk-go v1.44.53
-	github.com/aws/aws-sdk-go-v2 v1.16.7
+	github.com/aws/aws-sdk-go-v2 v1.16.8
 	github.com/bugsnag/panicwrap v1.3.4
 	github.com/google/uuid v1.3.0
 	github.com/h2non/filetype v1.1.3
