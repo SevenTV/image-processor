@@ -244,9 +244,11 @@ int main(int argc, char* argv[])
 
             anim_config.allow_mixed = 1;
 
-            config.quality = 95;
+            config.method = 6;
+            config.quality = 85;
             config.lossless = 1;
-            config.thread_level = 0;
+            config.alpha_quality = 85;
+            config.thread_level = threads > 1 ? 1 : 0;
 
             auto ok = WebPValidateConfig(&config);
             if (!ok) {
