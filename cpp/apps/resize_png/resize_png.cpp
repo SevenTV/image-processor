@@ -110,6 +110,37 @@ int main(int argc, char* argv[])
                 std::cerr << "Invalid input image: " << arg << std::endl;
                 return EXIT_FAILURE;
             }
+
+            if (currentInput.data.channels() == 4) {
+                // we need to correct the transparent pixels on this image so that resizing doesnt make weird artifacts
+                std::vector<cv::Mat> channels;
+                cv::split(currentInput.data, channels); // break image into channels
+
+                cv::Mat adjacent;
+
+                auto alpha = channels[3]; // get the alpha channel
+
+                cv::Mat noAlpha;
+
+                channels.pop_back();
+                cv::merge(channels, noAlpha);
+
+                cv::Mat adj;
+                cv::dilate(alpha, adj, cv::Mat(), cv::Point(-1, -1), 3);
+
+                cv::inpaint(noAlpha, alpha == 0 & adj, noAlpha, 1, cv::INPAINT_TELEA); // inpaint the alpha channel
+                adj.release();
+
+                cv::split(noAlpha, channels); // split the image back into channels
+                noAlpha.release();
+
+                channels.push_back(alpha); // add the alpha channel back into the channels
+
+                cv::merge(channels, currentInput.data); // merge the channels back into an image
+                for (auto& channel : channels) {
+                    channel.release();
+                }
+            }
         } else if (arg == "--resize" || arg == "-r") {
             NEXTARG();
             currentWidth = std::stoi(arg);
