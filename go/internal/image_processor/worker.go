@@ -751,6 +751,9 @@ func (Worker) resizeFrames(ctx global.Context, inputDir string, tmpDir string, t
 		height = int(math.Round(hf))
 
 		tsk.ResizeRatio = task.ResizeRatioStretch
+	} else {
+		width = tsk.SmallestMaxHeight
+		height = tsk.SmallestMaxHeight
 	}
 
 	resizeArgs := []string{}
