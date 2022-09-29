@@ -9,7 +9,6 @@ import (
 	"image/gif"
 	"io"
 	"io/fs"
-	"io/ioutil"
 	"math"
 	"os"
 	"os/exec"
@@ -132,7 +131,7 @@ func (w Worker) Work(ctx global.Context, tsk task.Task, result *task.Result) (er
 		return multierr.Append(fmt.Errorf("failed at hash input file"), err)
 	}
 
-	result.ImageInput = task.ResultImage{
+	result.ImageInput = task.ResultFile{
 		SHA3:        hex.EncodeToString(h.Sum(nil)),
 		FrameCount:  len(delays),
 		ContentType: match.MIME.Value,
@@ -254,7 +253,7 @@ func (Worker) uploadResults(tmpDir string, resultsDir string, variantsDir string
 		}
 	}()
 
-	zipFilePath := path.Join(tmpDir, "emote.zip")
+	zipFilePath := path.Join(tmpDir, "archive.zip")
 
 	zipFile, err := os.Create(zipFilePath)
 	if err != nil {
@@ -366,15 +365,10 @@ func (Worker) uploadResults(tmpDir string, resultsDir string, variantsDir string
 
 		key := path.Join(tsk.Output.Prefix, path.Base(pth))
 
-		name := path.Base(pth)
-
-		if tsk.Output.ExcludeFileExtension {
-			key = strings.TrimSuffix(key, ".webp")
-			name = strings.TrimSuffix(name, ".webp")
-		}
+		name := strings.TrimSuffix(path.Base(pth), path.Ext(pth))
 
 		if t == matchers.TypeZip {
-			result.ZipOutput = task.ResultZipOutput{
+			result.ArchiveOutput = task.ResultFile{
 				Name:         name,
 				Size:         len(data),
 				Key:          key,
@@ -469,7 +463,7 @@ func (Worker) uploadResults(tmpDir string, resultsDir string, variantsDir string
 			}
 
 			mtx.Lock()
-			result.ImageOutputs = append(result.ImageOutputs, task.ResultImage{
+			result.ImageOutputs = append(result.ImageOutputs, task.ResultFile{
 				Name:         name,
 				FrameCount:   frameCount,
 				Width:        width,
@@ -879,7 +873,7 @@ func (Worker) exportFrames(ctx global.Context, tmpDir string, inputFile string, 
 		}
 
 		if len(delays) == 0 {
-			files, err := ioutil.ReadDir(inputDir)
+			files, err := os.ReadDir(inputDir)
 			if err != nil {
 				return nil, "", multierr.Append(fmt.Errorf("failed at ReadDir inputDir"), err)
 			}

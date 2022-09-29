@@ -26,37 +26,28 @@ func (r ResultState) String() string {
 }
 
 type Result struct {
-	ID           string          `json:"id"`
-	StartedAt    time.Time       `json:"started_at"`
-	FinishedAt   time.Time       `json:"finished_at"`
-	State        ResultState     `json:"state"`
-	Message      string          `json:"message"`
-	ImageInput   ResultImage     `json:"image_input"`
-	ImageOutputs []ResultImage   `json:"image_outputs"`
-	ZipOutput    ResultZipOutput `json:"zip_output"`
-	Metadata     json.RawMessage `json:"metadata"`
+	ID            string          `json:"id"`
+	StartedAt     time.Time       `json:"started_at"`
+	FinishedAt    time.Time       `json:"finished_at"`
+	State         ResultState     `json:"state"`
+	Message       string          `json:"message"`
+	ImageInput    ResultFile      `json:"image_input"`
+	ImageOutputs  []ResultFile    `json:"image_outputs"`
+	ArchiveOutput ResultFile      `json:"archive_output"`
+	Metadata      json.RawMessage `json:"metadata"`
 }
 
-type ResultImage struct {
+type ResultFile struct {
 	Name         string `json:"name"`
 	SHA3         string `json:"sha3"`
-	FrameCount   int    `json:"frame_count"`
 	ContentType  string `json:"content_type"`
-	Width        int    `json:"width"`
-	Height       int    `json:"height"`
 	Size         int    `json:"size"`
 	Key          string `json:"key"`
 	Bucket       string `json:"bucket"`
 	ACL          string `json:"acl"`
 	CacheControl string `json:"cache_control"`
-}
 
-type ResultZipOutput struct {
-	Name         string `json:"name"`
-	SHA3         string `json:"sha3"`
-	Size         int    `json:"size"`
-	Key          string `json:"key"`
-	Bucket       string `json:"bucket"`
-	ACL          string `json:"acl"`
-	CacheControl string `json:"cache_control"`
+	FrameCount int `json:"frame_count,omitempty"`
+	Width      int `json:"width,omitempty"`
+	Height     int `json:"height,omitempty"`
 }
