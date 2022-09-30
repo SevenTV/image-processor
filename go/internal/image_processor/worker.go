@@ -21,7 +21,6 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/google/uuid"
 	"github.com/h2non/filetype/matchers"
 	"github.com/h2non/filetype/types"
@@ -199,7 +198,7 @@ func (Worker) downloadFile(ctx global.Context, tsk task.Task, tmpDir string, res
 		}
 	}()
 
-	buf := aws.NewWriteAtBuffer([]byte{})
+	buf := &bytes.Buffer{}
 
 	err = ctx.Inst().S3.DownloadFile(ctx, buf, &s3.GetObjectInput{
 		Bucket: aws.String(tsk.Input.Bucket),
@@ -312,7 +311,7 @@ func (Worker) uploadResults(tmpDir string, resultsDir string, variantsDir string
 	)
 
 	if tsk.Input.Reupload.Enabled {
-		if err := ctx.Inst().S3.UploadFile(ctx, &s3manager.UploadInput{
+		if err := ctx.Inst().S3.UploadFile(ctx, &s3.PutObjectInput{
 			Body:         bytes.NewReader(inputFile),
 			ACL:          aws.String(tsk.Input.Reupload.ACL),
 			Bucket:       aws.String(tsk.Input.Reupload.Bucket),
@@ -479,7 +478,7 @@ func (Worker) uploadResults(tmpDir string, resultsDir string, variantsDir string
 			mtx.Unlock()
 		}
 
-		if err := ctx.Inst().S3.UploadFile(ctx, &s3manager.UploadInput{
+		if err := ctx.Inst().S3.UploadFile(ctx, &s3.PutObjectInput{
 			Body:         bytes.NewReader(data),
 			ACL:          aws.String(tsk.Output.ACL),
 			Bucket:       aws.String(tsk.Output.Bucket),

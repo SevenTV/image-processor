@@ -19,7 +19,7 @@ build:
 	GOOS=linux GOARCH=amd64 go build -v -ldflags "-X 'main.Version=${VERSION}' -X 'main.Unix=$(shell date +%s)' -X 'main.User=${BUILDER}'" -o out/image_processor cmd/*.go
 
 lint:
-	golangci-lint run
+	golangci-lint run --go=1.18
 
 format:
 	gofmt -s -w .

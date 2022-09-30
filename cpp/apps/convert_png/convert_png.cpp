@@ -123,7 +123,7 @@ int main(int argc, char* argv[])
                 return EXIT_FAILURE;
             }
 
-            // in theory because of how we deduplicate frames here to optimize encoding, 
+            // in theory because of how we deduplicate frames here to optimize encoding,
             // people could upload a 2 frame emote where both frames are the same and it would produce single frame animated emotes.
             // however this is likely not an issue as not many people do this and also it wouldnt really break anything (i think).
             if (inputs.size() != 0) {

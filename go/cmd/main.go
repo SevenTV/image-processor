@@ -13,13 +13,13 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/bugsnag/panicwrap"
+	"github.com/seventv/common/svc/s3"
 	"github.com/seventv/image-processor/go/internal/configure"
 	"github.com/seventv/image-processor/go/internal/global"
 	"github.com/seventv/image-processor/go/internal/health"
 	"github.com/seventv/image-processor/go/internal/image_processor"
 	"github.com/seventv/image-processor/go/internal/monitoring"
 	"github.com/seventv/image-processor/go/internal/svc/prometheus"
-	"github.com/seventv/image-processor/go/internal/svc/s3"
 	messagequeue "github.com/seventv/message-queue/go"
 	"go.uber.org/zap"
 )

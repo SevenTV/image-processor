@@ -8,12 +8,14 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/seventv/common/svc/s3"
+
 	"github.com/seventv/image-processor/go/internal/configure"
 	"github.com/seventv/image-processor/go/internal/global"
 	"github.com/seventv/image-processor/go/internal/svc/prometheus"
-	"github.com/seventv/image-processor/go/internal/svc/s3"
 	"github.com/seventv/image-processor/go/internal/testutil"
 	"github.com/seventv/image-processor/go/task"
+
 	messagequeue "github.com/seventv/message-queue/go"
 )
 

@@ -66,11 +66,11 @@ spec:
               name: tempfs
           resources:
             requests:
-              memory: "8Gi"
-              cpu: "8"
+              memory: "2Gi"
+              cpu: "2"
             limits:
-              memory: "8Gi"
-              cpu: "10"
+              memory: "3Gi"
+              cpu: "4"
       volumes:
         - name: config
           configMap:
