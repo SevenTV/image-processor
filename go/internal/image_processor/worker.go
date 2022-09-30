@@ -478,9 +478,14 @@ func (Worker) uploadResults(tmpDir string, resultsDir string, variantsDir string
 			mtx.Unlock()
 		}
 
+		var acl *string
+		if tsk.Output.ACL != "" {
+			acl = &tsk.Output.ACL
+		}
+
 		if err := ctx.Inst().S3.UploadFile(ctx, &s3.PutObjectInput{
 			Body:         bytes.NewReader(data),
-			ACL:          aws.String(tsk.Output.ACL),
+			ACL:          acl,
 			Bucket:       aws.String(tsk.Output.Bucket),
 			CacheControl: aws.String(tsk.Output.CacheControl),
 			ContentType:  aws.String(t.MIME.Value),
