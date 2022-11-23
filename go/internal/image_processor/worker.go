@@ -743,16 +743,16 @@ func (Worker) resizeFrames(ctx global.Context, inputDir string, tmpDir string, t
 		width /= scale
 		height /= scale
 
-		// If the width is bigger than the max width, then scale it down
-		if width > tsk.SmallestMaxWidth {
-			width = tsk.SmallestMaxWidth
-			height = int(float64(height) * (float64(tsk.SmallestMaxWidth) / float64(width)))
-		}
-
 		// If the height is bigger than the max height, then scale it down
 		if height > tsk.SmallestMaxHeight {
 			height = tsk.SmallestMaxHeight
 			width = int(float64(width) * (float64(tsk.SmallestMaxHeight) / float64(height)))
+		}
+
+		// If the width is bigger than the max width, then scale it down
+		if width > tsk.SmallestMaxWidth {
+			width = tsk.SmallestMaxWidth
+			height = int(float64(height) * (float64(tsk.SmallestMaxWidth) / float64(width)))
 		}
 
 		// If the width is 0, then set it to 1
