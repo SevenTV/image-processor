@@ -77,9 +77,9 @@ jobs:
           context: .
           file: docker/full.Dockerfile
           cache-from: |
-            type=registry,ref=gha
+            type=gha
           cache-to: |
-            type=registry,ref=gha,mode=max
+            type=gha,mode=max
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/${{ (env.DEPLOY_PROD == 'true' && '7tv') || '7tv-stage' }}/image-processor:latest
             ${{ steps.login-ecr.outputs.registry }}/${{ (env.DEPLOY_PROD == 'true' && '7tv') || '7tv-stage' }}/image-processor:${{ github.sha }}
