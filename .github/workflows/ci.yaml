@@ -40,10 +40,117 @@ jobs:
       cancel-in-progress: true
 
     steps:
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.18.3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+
+      - name: Install Yarn
+        run: npm install -g yarn
+
       - name: Checkout code
         uses: actions/checkout@v3
         with:
           submodules: recursive
+
+      - id: cache-paths
+        run: |
+          echo "::set-output name=go-build::$(go env GOCACHE)"
+          echo "::set-output name=go-mod::$(go env GOMODCACHE)"
+          echo "::set-output name=pwd::$(pwd)"
+
+      - name: Results Cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.cache-paths.outputs.pwd }}/cpp/out
+          key: ${{ runner.os }}-results-${{ hashFiles('cpp/third-party/Makefile') }}
+
+      - name: External Build Cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.cache-paths.outputs.pwd }}/cpp/third-party/build
+          key: ${{ runner.os }}-external-build-${{ hashFiles('cpp/third-party/Makefile') }}
+
+      - name: Go Build Cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.cache-paths.outputs.go-build }}
+          key: ${{ runner.os }}-go-build-${{ hashFiles('go.sum') }}
+
+      - name: Go Mod Cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.cache-paths.outputs.go-mod }}
+          key: ${{ runner.os }}-go-mod-${{ hashFiles('go.sum') }}
+
+      - name: GoLint Cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.GOLANGCI_LINT_CACHE }}
+          key: ${{ runner.os }}-go-lint-ci
+
+      - name: Node Modules Cache
+        uses: actions/cache@v3
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node_modules-${{ hashFiles('yarn.lock') }}
+
+      - name: Setup | Rust
+        uses: ATiltedTree/setup-rust@v1
+        with:
+          rust-version: stable
+
+      - name: Install Development Dependencies
+        run: make dev_deps
+
+      - name: Run Linter
+        run: make lint
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+              ca-certificates \
+              build-essential \
+              curl \
+              ninja-build \
+              meson \
+              git \
+              nasm \
+              openssl \
+              pkg-config \
+              cmake \
+              libssl-dev \
+              libpng-dev \
+              zlib1g-dev \
+              libx264-dev \
+              libx265-dev \
+              libvpx-dev \
+              libopenjp2-7-dev \
+              libssl-dev \
+              gifsicle \
+              optipng
+
+      - name: Compile External Dependencies
+        run: make -C cpp external
+
+      - name: Build CPP Applications
+        run: make -C cpp build
+
+      - name: Move built files to /usr/local
+        run: |
+          sudo cp -r cpp/out/* /usr/local
+          sudo ldconfig
+
+      - name: Run Tests
+        run: make test
+
+      - name: Build App
+        run: make build
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -75,11 +182,11 @@ jobs:
         if: ${{ env.DEPLOY_PROD == 'true' || env.DEPLOY_STAGE == 'true' }}
         with:
           context: .
-          file: docker/full.Dockerfile
-          cache-from: |
-            type=gha
-          cache-to: |
-            type=gha,mode=max
+          file: docker/partial.Dockerfile
+          # cache-from: |
+          #   type=registry,ref=gha
+          # cache-to: |
+          #   type=registry,ref=gha,mode=max
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/${{ (env.DEPLOY_PROD == 'true' && '7tv') || '7tv-stage' }}/image-processor:latest
             ${{ steps.login-ecr.outputs.registry }}/${{ (env.DEPLOY_PROD == 'true' && '7tv') || '7tv-stage' }}/image-processor:${{ github.sha }}
