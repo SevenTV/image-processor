@@ -730,40 +730,23 @@ func (Worker) resizeFrames(ctx global.Context, inputDir string, tmpDir string, t
 	}
 
 	if tsk.ResizeRatio == task.ResizeRatioNothing {
-		// Get the largest scale factor
-		scale := 1
-		for _, s := range tsk.Scales {
-			if s > scale {
-				scale = s
-			}
+		smwf := float64(tsk.SmallestMaxWidth)
+		wf := float64(width)
+		smhf := float64(tsk.SmallestMaxHeight)
+		hf := float64(height)
+
+		if smwf < wf {
+			hf *= smwf / wf
+			wf = smwf
 		}
 
-		// Divide the width and height by the scale factor
-		// This is integer division, so it will round down
-		width /= scale
-		height /= scale
-
-		// If the height is bigger than the max height, then scale it down
-		if height > tsk.SmallestMaxHeight {
-			width = int(float64(width) * (float64(tsk.SmallestMaxHeight) / float64(height)))
-			height = tsk.SmallestMaxHeight
+		if smhf < hf {
+			wf *= smhf / hf
+			hf = smhf
 		}
 
-		// If the width is bigger than the max width, then scale it down
-		if width > tsk.SmallestMaxWidth {
-			height = int(float64(height) * (float64(tsk.SmallestMaxWidth) / float64(width)))
-			width = tsk.SmallestMaxWidth
-		}
-
-		// If the width is 0, then set it to 1
-		if width == 0 {
-			width = 1
-		}
-
-		// If the height is 0, then set it to 1
-		if height == 0 {
-			height = 1
-		}
+		width = int(math.Round(wf))
+		height = int(math.Round(hf))
 
 		tsk.ResizeRatio = task.ResizeRatioStretch
 	} else {
