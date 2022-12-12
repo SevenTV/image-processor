@@ -96,7 +96,7 @@ jobs:
 
       - name: Setup Kubectl
         if: ${{ env.DEPLOY_PROD == 'true' || env.DEPLOY_STAGE == 'true' }}
-        uses: azure/setup-kubectl@v3.0
+        uses: azure/setup-kubectl@v3.1
 
       - name: Deploy to k8s
         if: ${{ env.DEPLOY_PROD == 'true' || env.DEPLOY_STAGE == 'true' }}
