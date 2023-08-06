@@ -14,6 +14,13 @@ monitoring:
   bind: "0.0.0.0:9100"
 
 message_queue:
+  mode: "RMQ"
+  jobs_queue: "seventv_image_processor_jobs"
   rmq:
     uri: ${rmq_uri}
     max_reconnect_attempts: 10
+
+s3:
+  region: ${s3_region}
+  access_token: "${s3_access_key}"
+  secret_key: "${s3_secret_key}"

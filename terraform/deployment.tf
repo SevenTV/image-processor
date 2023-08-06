@@ -15,6 +15,9 @@ resource "kubernetes_secret" "app" {
       rmq_uri = local.infra.rabbitmq_uri
       worker_threads = var.production ? 3 : 1
       worker_jobs = var.production ? 2 : 1
+      s3_region = local.infra.region
+      s3_access_key = local.infra.s3_access_key.id
+      s3_secret_key = local.infra.s3_access_key.secret
     })
   }
 }
