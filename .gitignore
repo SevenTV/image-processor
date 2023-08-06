@@ -39,6 +39,7 @@ tmp/
 !.circleci/*.yaml
 !example.config.yaml
 !docker-compose.yaml
+!terraform/config.template.yaml
 !.github/**/*.yaml
 packrd/
 *-packr.go

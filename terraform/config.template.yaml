@@ -1,0 +1,19 @@
+level: debug
+
+worker:
+  temp_dir: /tempfs
+  threads_per_worker: 3
+  jobs: 2
+
+health:
+  enabled: true
+  bind: "0.0.0.0:9000"
+
+monitoring:
+  enabled: true
+  bind: "0.0.0.0.9100"
+
+message_queue:
+  rmq:
+    uri: ${rmq_uri}
+    max_reconnect_attempts: 10
