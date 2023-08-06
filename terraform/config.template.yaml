@@ -2,8 +2,8 @@ level: debug
 
 worker:
   temp_dir: /tempfs
-  threads_per_worker: 1
-  jobs: 2
+  threads_per_worker: ${worker_threads}
+  jobs: ${worker_jobs}
 
 health:
   enabled: true
@@ -11,7 +11,7 @@ health:
 
 monitoring:
   enabled: true
-  bind: "0.0.0.0.9100"
+  bind: "0.0.0.0:9100"
 
 message_queue:
   rmq:

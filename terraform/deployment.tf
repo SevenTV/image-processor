@@ -13,6 +13,8 @@ resource "kubernetes_secret" "app" {
   data = {
     "config.yaml" = templatefile("${path.module}/config.template.yaml", {
       rmq_uri = local.infra.rabbitmq_uri
+      worker_threads = var.production ? 3 : 1
+      worker_jobs = var.production ? 2 : 1
     })
   }
 }
