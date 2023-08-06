@@ -6,7 +6,7 @@ data "kubernetes_namespace" "app" {
 
 resource "kubernetes_secret" "app" {
   metadata {
-    name      = "api"
+    name      = "image-processor"
     namespace = var.namespace
   }
 
@@ -165,7 +165,7 @@ resource "kubernetes_service" "app" {
 
     port {
       name        = "metrics"
-      port        = 9000
+      port        = 9100
       target_port = "metrics"
     }
 
