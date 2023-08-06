@@ -185,7 +185,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: image-processor
-  namespace: ${kubernetes_namespace.app.metadata[0].name}
+  namespace: ${data.kubernetes_namespace.app.metadata[0].name}
   labels:
     app: image-processor
 spec:
