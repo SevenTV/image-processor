@@ -84,11 +84,11 @@ resource "kubernetes_deployment" "app" {
 
           resources {
             requests = {
-              cpu    = var.production ? "6000m" : "3000m"
+              cpu    = var.production ? "6000m" : "1500m"
               memory = var.production ? "7Gi" : "1Gi"
             }
             limits = {
-              cpu    = var.production ? "6000m" : "3000m"
+              cpu    = var.production ? "6000m" : "1500m"
               memory = var.production ? "7Gi" : "1Gi"
             }
           }

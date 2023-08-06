@@ -2,7 +2,7 @@ level: debug
 
 worker:
   temp_dir: /tempfs
-  threads_per_worker: 3
+  threads_per_worker: 1
   jobs: 2
 
 health:
