@@ -36,3 +36,16 @@ variable "image_pull_policy" {
   type    = string
   default = "Always"
 }
+
+variable "s3" {
+  type = object({
+    endpoint        = string
+    region          = string
+    ak              = string
+    sk              = string
+    internal_bucket = string
+    public_bucket   = string
+  })
+  nullable = true
+  default  = null
+}

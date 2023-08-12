@@ -12,12 +12,13 @@ resource "kubernetes_secret" "app" {
 
   data = {
     "config.yaml" = templatefile("${path.module}/config.template.yaml", {
-      rmq_uri = local.infra.rabbitmq_uri
+      rmq_uri        = local.infra.rabbitmq_uri
       worker_threads = var.production ? 3 : 1
-      worker_jobs = var.production ? 2 : 1
-      s3_region = local.infra.region
-      s3_access_key = local.infra.s3_access_key.id
-      s3_secret_key = local.infra.s3_access_key.secret
+      worker_jobs    = var.production ? 2 : 1
+      s3_region      = local.s3.region
+      s3_access_key  = local.s3.ak
+      s3_secret_key  = local.s3.sk
+      s3_endpoint    = local.s3.endpoint != null ? local.s3.endpoint : ""
     })
   }
 }

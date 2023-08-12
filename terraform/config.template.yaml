@@ -24,3 +24,4 @@ s3:
   region: ${s3_region}
   access_token: "${s3_access_key}"
   secret_key: "${s3_secret_key}"
+  endpoint: "${s3_endpoint}"
