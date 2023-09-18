@@ -1,7 +1,7 @@
 project(webp_dump)
 
 find_package(OpenCV REQUIRED)
-find_package(WebP REQUIRED webp webpdemux)
+find_package(WebP REQUIRED)
 find_package(libavif REQUIRED)
 
 add_executable(dump_png dump_png.cpp)
