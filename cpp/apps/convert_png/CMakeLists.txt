@@ -1,7 +1,7 @@
 project(convert_png)
 
 find_package(Gifski REQUIRED)
-find_package(WebP REQUIRED webpmux webp)
+find_package(WebP REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(libavif REQUIRED)
 
