@@ -39,6 +39,7 @@ _libavif: _build _aom
 			-DCMAKE_PREFIX_PATH=$$(realpath $$(pwd)/../../../out) \
 			-D_AOM_INCLUDEDIR=$$(realpath $$(pwd)/../../../out/include) \
 			-D_AOM_LIBDIR=$$(realpath $$(pwd)/../../../../out/lib) \
+			-DCMAKE_INSTALL_PREFIX=$$(realpath $$(pwd)/../../../out/) \
 			-DCMAKE_INSTALL_BINDIR=$$(realpath $$(pwd)/../../../out/bin) \
 			-DCMAKE_INSTALL_LIBDIR=$$(realpath $$(pwd)/../../../out/lib) \
 			-DCMAKE_INSTALL_INCLUDEDIR=$$(realpath $$(pwd)/../../../out/include) && \
