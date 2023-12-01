@@ -253,8 +253,12 @@ github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFR
 github.com/rogpeppe/go-internal v1.6.1 h1:/FiVV8dS/e+YqF2JvO3yXRFbBLTIuSDkuC7aBOAvL+k=
 github.com/seventv/common v0.0.0-20220930061340-588faaebd0d7 h1:8IfV57rVEsAca8Yj5iqKzvueNCMPDw5J/ynWkTrAibI=
 github.com/seventv/common v0.0.0-20220930061340-588faaebd0d7/go.mod h1:jHHFe3uNMyzb/ReDqMvaI/A1euvV/PW/G+2PhcWQqWw=
+github.com/seventv/message-queue v0.0.0-20231201171845-1bb9d5db6881 h1:u6/W1jwypoxJ2gEiA2QEnTfLyMkgbTbuFrF2YvOP0LU=
+github.com/seventv/message-queue v0.0.0-20231201171845-1bb9d5db6881/go.mod h1:iGzjTPvD36tzY1zqz/xYjG1D1NnmlzbSUZU+7TX8FkI=
 github.com/seventv/message-queue/go v0.0.0-20220623223012-800919900c0d h1:A3LaacuowEN3oKAkQZakz4eK90bafCSurxMSp4zUnHk=
 github.com/seventv/message-queue/go v0.0.0-20220623223012-800919900c0d/go.mod h1:L1iYDSmltUnxlVGX9RayCoVi3e8aNtFrrLJL6Jv+mrM=
+github.com/seventv/message-queue/go v0.0.0-20231201171845-1bb9d5db6881 h1:hftRpO0JO4o+EKJFwTMK5jW2ayMR3PLgCJm9tBKp5tI=
+github.com/seventv/message-queue/go v0.0.0-20231201171845-1bb9d5db6881/go.mod h1:L1iYDSmltUnxlVGX9RayCoVi3e8aNtFrrLJL6Jv+mrM=
 github.com/sirupsen/logrus v1.2.0/go.mod h1:LxeOpSwHxABJmUn/MG1IvRgCAasNZTLOkJPxbbu5VWo=
 github.com/sirupsen/logrus v1.4.2/go.mod h1:tLMulIdttU9McNUspp0xgXVQah82FyeX6MwdIuYE2rE=
 github.com/sirupsen/logrus v1.6.0/go.mod h1:7uNnSEd1DgxDLC74fIahvMZmmYsHGZGEOFrfsX/uA88=

@@ -26,3 +26,9 @@ dev_deps:
 	yarn
 	$(MAKE) -C cpp dev_deps
 	$(MAKE) -C go dev_deps
+
+terraform:
+	terraform -chdir=./terraform init
+
+deploy:
+	terraform -chdir=./terraform apply -auto-approve
