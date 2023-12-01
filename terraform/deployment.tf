@@ -13,8 +13,8 @@ resource "kubernetes_secret" "app" {
   data = {
     "config.yaml" = templatefile("${path.module}/config.template.yaml", {
       rmq_uri        = local.infra.rabbitmq_uri
-      worker_threads = var.production ? 3 : 1
-      worker_jobs    = var.production ? 2 : 1
+      worker_threads =  3
+      worker_jobs    =  2
       s3_region      = local.s3.region
       s3_access_key  = local.s3.ak
       s3_secret_key  = local.s3.sk
@@ -90,12 +90,12 @@ resource "kubernetes_deployment" "app" {
 
           resources {
             requests = {
-              cpu    = var.production ? "6000m" : "1500m"
-              memory = var.production ? "7Gi" : "1Gi"
+              cpu    = "6000m"
+              memory = "7Gi"
             }
             limits = {
-              cpu    = var.production ? "6000m" : "1500m"
-              memory = var.production ? "7Gi" : "1Gi"
+              cpu    = "6000m"
+              memory = "7Gi"
             }
           }
 
