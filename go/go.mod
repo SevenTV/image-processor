@@ -10,7 +10,7 @@ require (
 	github.com/h2non/filetype v1.1.3
 	github.com/prometheus/client_golang v1.12.2
 	github.com/seventv/common v0.0.0-20220930061340-588faaebd0d7
-	github.com/seventv/message-queue/go v0.0.0-20220623223012-800919900c0d
+	github.com/seventv/message-queue/go v0.0.0-20231201171845-1bb9d5db6881
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.12.0
 	github.com/valyala/fasthttp v1.38.0
@@ -42,6 +42,7 @@ require (
 	github.com/prometheus/common v0.36.0 // indirect
 	github.com/prometheus/procfs v0.7.3 // indirect
 	github.com/rabbitmq/amqp091-go v1.3.4 // indirect
+	github.com/seventv/message-queue v0.0.0-20231201171845-1bb9d5db6881 // indirect
 	github.com/spf13/afero v1.8.2 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
